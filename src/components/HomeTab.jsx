@@ -4,7 +4,7 @@ function firstName(fullName) {
   return (fullName || '').trim().split(' ')[0];
 }
 
-export default function HomeTab({ announcements, birthdays, meetings, aprs }) {
+export default function HomeTab({ announcements, birthdays, huddles, townhall, aprs }) {
   const todayStr = todayPST();
 
   const upcomingAprs = aprs
@@ -16,14 +16,6 @@ export default function HomeTab({ announcements, birthdays, meetings, aprs }) {
     .map((b) => ({ ...b, daysAway: daysUntilBirthday(b.date, todayStr) }))
     .sort((a, b) => a.daysAway - b.daysAway)
     .slice(0, 6);
-
-  const clusterMeeting = meetings
-    .filter((m) => m.type.toLowerCase() === 'cluster' && m.date >= todayStr)
-    .sort((a, b) => a.date.localeCompare(b.date))[0];
-
-  const townhall = meetings
-    .filter((m) => m.type.toLowerCase() === 'townhall' && m.date >= todayStr)
-    .sort((a, b) => a.date.localeCompare(b.date))[0];
 
   return (
     <div>
@@ -58,24 +50,23 @@ export default function HomeTab({ announcements, birthdays, meetings, aprs }) {
       <div className="home-grid">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div className="card home-section">
-            <p className="home-section-title">Cluster meeting</p>
-            {clusterMeeting ? (
-              <p className="home-line">
-                Next: {clusterMeeting.date}
-                {clusterMeeting.time ? ` · ${clusterMeeting.time}` : ''}
-                {clusterMeeting.note ? ` · ${clusterMeeting.note}` : ''}
-              </p>
-            ) : (
+            <p className="home-section-title">Cluster huddle</p>
+            {huddles.length === 0 ? (
               <p className="empty-note">Nothing scheduled yet.</p>
+            ) : (
+              huddles.map((h, i) => (
+                <p key={i} className="home-line">
+                  {i === 0 ? 'Next: ' : 'Then: '}
+                  {h.date} · {h.time}
+                </p>
+              ))
             )}
           </div>
           <div className="card home-section">
             <p className="home-section-title">Townhall</p>
             {townhall ? (
               <p className="home-line">
-                Next: {townhall.date}
-                {townhall.time ? ` · ${townhall.time}` : ''}
-                {townhall.note ? ` · ${townhall.note}` : ''}
+                Next: {townhall.date} · {townhall.time}
               </p>
             ) : (
               <p className="empty-note">Nothing scheduled yet.</p>

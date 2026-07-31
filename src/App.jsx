@@ -5,12 +5,12 @@ import {
   FILINGS_TAB,
   ANNOUNCEMENTS_TAB,
   BIRTHDAYS_TAB,
-  MEETINGS_TAB,
   APRS_TAB,
   SHEET_ID,
   WEBHOOK_URL,
 } from './config.js';
 import { fetchTabAsObjects } from './lib/csv.js';
+import { fetchCalendarMeetings } from './lib/calendarMeetings.js';
 import { postToSheet, filingPayload } from './lib/webhook.js';
 import { evaluateFiling, todayPST } from './lib/dates.js';
 import { colorForIndex } from './lib/colors.js';
@@ -47,7 +47,8 @@ export default function App() {
   const [filings, setFilings] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [birthdays, setBirthdays] = useState([]);
-  const [meetings, setMeetings] = useState([]);
+  const [huddles, setHuddles] = useState([]);
+  const [townhall, setTownhall] = useState(null);
   const [aprs, setAprs] = useState([]);
 
   const [loading, setLoading] = useState(true);
@@ -67,13 +68,13 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      const [leadRows, filingRows, announcementRows, birthdayRows, meetingRows, aprRows] = await Promise.all([
+      const [leadRows, filingRows, announcementRows, birthdayRows, aprRows, calendarMeetings] = await Promise.all([
         safeFetchTab(TEAM_LEADS_TAB),
         safeFetchTab(FILINGS_TAB),
         safeFetchTab(ANNOUNCEMENTS_TAB),
         safeFetchTab(BIRTHDAYS_TAB),
-        safeFetchTab(MEETINGS_TAB),
         safeFetchTab(APRS_TAB),
+        fetchCalendarMeetings(),
       ]);
 
       const nextLeads = leadRows
@@ -104,10 +105,6 @@ export default function App() {
         .filter((r) => r.Name && r.Date)
         .map((r) => ({ name: r.Name.trim(), date: r.Date.trim() }));
 
-      const nextMeetings = meetingRows
-        .filter((r) => r.Type && r.Date)
-        .map((r) => ({ type: r.Type.trim(), date: r.Date.trim(), time: r.Time || '', note: r.Note || '' }));
-
       const nextAprs = aprRows
         .filter((r) => r.Name && r.Date)
         .map((r) => ({ name: r.Name.trim(), date: r.Date.trim() }));
@@ -116,7 +113,8 @@ export default function App() {
       setFilings(nextFilings);
       setAnnouncements(nextAnnouncements);
       setBirthdays(nextBirthdays);
-      setMeetings(nextMeetings);
+      setHuddles(calendarMeetings.huddles);
+      setTownhall(calendarMeetings.townhall);
       setAprs(nextAprs);
     } catch (err) {
       setError(err.message || 'Failed to load the sheet');
@@ -170,7 +168,7 @@ export default function App() {
 
       <div className="tab-fade">
         {nav === 'home' && (
-          <HomeTab announcements={announcements} birthdays={birthdays} meetings={meetings} aprs={aprs} />
+          <HomeTab announcements={announcements} birthdays={birthdays} huddles={huddles} townhall={townhall} aprs={aprs} />
         )}
 
         {nav === 'pto' && (
@@ -194,7 +192,7 @@ export default function App() {
           </div>
         )}
 
-        {nav === 'eod' && <EODFormTab />}
+        {nav === 'eod' && <EODFormTab leads={leads} />}
         {nav === 'apr' && <APRTab aprs={aprs} />}
       </div>
 

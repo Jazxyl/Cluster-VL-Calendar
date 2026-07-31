@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { todayPST } from '../lib/dates.js';
 import { fileToBase64 } from '../lib/files.js';
 import { postToSheet, eodPayload } from '../lib/webhook.js';
 
 const EMPTY_FORM = {
+  leadName: '',
   date: todayPST(),
   clientCalls: '',
   coachings: '',
@@ -11,12 +12,26 @@ const EMPTY_FORM = {
   ticketMonitoring: '',
 };
 
-export default function EODFormTab() {
-  const [form, setForm] = useState(EMPTY_FORM);
+export default function EODFormTab({ leads }) {
+  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, leadName: leads?.[0]?.name || '' }));
   const [hubspotFile, setHubspotFile] = useState(null);
   const [attendanceFile, setAttendanceFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
+
+  // Warn if they try to close/navigate away while a submission (with
+  // attachments) is still in flight — losing that silently is worse than
+  // a "are you sure?" prompt.
+  useEffect(() => {
+    function handleBeforeUnload(e) {
+      if (submitting) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [submitting]);
 
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -24,6 +39,7 @@ export default function EODFormTab() {
 
   function missingFields() {
     const missing = [];
+    if (!form.leadName) missing.push('Team lead');
     if (!form.date) missing.push('Date');
     if (!form.clientCalls.trim()) missing.push('Client-related calls attended');
     if (!form.coachings.trim()) missing.push('One on one coachings completed');
@@ -49,13 +65,17 @@ export default function EODFormTab() {
         fileToBase64(attendanceFile),
       ]);
 
+      // Wait for the actual request to finish before confirming — this form
+      // has attachments, so "looks fast but might silently fail if you close
+      // the tab" isn't an acceptable trade here, unlike simpler text-only
+      // submissions elsewhere in the app.
       const res = await postToSheet(
         eodPayload({ ...form, hubspotFile: hubspotEncoded, attendanceFile: attendanceEncoded })
       );
 
       if (res.ok) {
-        setResult({ ok: true, message: 'Submitted. Check the EOD sheet in a moment to confirm the screenshots landed.' });
-        setForm(EMPTY_FORM);
+        setResult({ ok: true, message: '✅ EOD submitted, nice work!' });
+        setForm((prev) => ({ ...EMPTY_FORM, leadName: prev.leadName }));
         setHubspotFile(null);
         setAttendanceFile(null);
       } else {
@@ -68,8 +88,25 @@ export default function EODFormTab() {
   }
 
   return (
-    <div className="card" style={{ padding: 20, maxWidth: 560 }}>
+    <div className="card" style={{ padding: 20 }}>
       <h3 className="panel-title">EOD Form</h3>
+
+      <div className="field">
+        <label>Team lead</label>
+        {!leads || leads.length === 0 ? (
+          <select disabled>
+            <option>Add a team lead in the Calendar tab first</option>
+          </select>
+        ) : (
+          <select value={form.leadName} onChange={(e) => update('leadName', e.target.value)}>
+            {leads.map((l) => (
+              <option key={l.id} value={l.name}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
 
       <div className="field">
         <label>Date</label>
@@ -130,13 +167,13 @@ export default function EODFormTab() {
       </div>
 
       <button className="primary" onClick={handleSubmit} disabled={submitting}>
-        {submitting ? 'Submitting…' : 'Submit EOD'}
+        {submitting ? 'Submitting… keep this tab open' : 'Submit EOD'}
       </button>
 
       {result && (
         <div style={{ marginTop: 16 }}>
           <div className={`result-box ${result.ok ? 'result-approved' : 'result-rejected'}`}>
-            <strong>{result.ok ? 'Submitted' : "Couldn't submit"}</strong>
+            {result.ok ? null : <strong>Couldn't submit</strong>}
             {result.message}
           </div>
         </div>

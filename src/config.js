@@ -9,7 +9,6 @@ export const TEAM_LEADS_TAB = 'TeamLeads';
 export const FILINGS_TAB = 'Filings';
 export const ANNOUNCEMENTS_TAB = 'Announcements';
 export const BIRTHDAYS_TAB = 'Birthdays';
-export const MEETINGS_TAB = 'Meetings';
 export const APRS_TAB = 'APRs';
 export const EOD_TAB = 'EOD';
 

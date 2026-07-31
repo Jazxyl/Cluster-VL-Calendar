@@ -36,9 +36,10 @@ export function filingPayload(f) {
   };
 }
 
-export function eodPayload({ date, clientCalls, coachings, fathomLink, ticketMonitoring, hubspotFile, attendanceFile }) {
+export function eodPayload({ leadName, date, clientCalls, coachings, fathomLink, ticketMonitoring, hubspotFile, attendanceFile }) {
   return {
     type: 'EOD',
+    lead: leadName,
     date,
     clientCalls,
     coachings,
