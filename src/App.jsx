@@ -194,7 +194,7 @@ export default function App() {
 
       <NavCards items={NAV_ITEMS} active={nav} onSelect={setNav} />
 
-      <div className="tab-fade">
+      <div key={nav} className="tab-fade">
         {nav === 'home' && (
           <HomeTab announcements={announcements} birthdays={birthdays} huddles={huddles} townhall={townhall} aprs={aprs} />
         )}
@@ -215,8 +215,10 @@ export default function App() {
                 File a VL
               </button>
             </div>
-            {ptoSubTab === 'calendar' && <CalendarTab leads={leads} entries={entries} />}
-            {ptoSubTab === 'file' && <FileVLTab leads={leads} filings={filings} onSubmit={submitFiling} />}
+            <div key={ptoSubTab} className="tab-fade">
+              {ptoSubTab === 'calendar' && <CalendarTab leads={leads} entries={entries} />}
+              {ptoSubTab === 'file' && <FileVLTab leads={leads} filings={filings} onSubmit={submitFiling} />}
+            </div>
           </div>
         )}
 
