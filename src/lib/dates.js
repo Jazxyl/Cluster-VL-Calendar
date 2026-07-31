@@ -49,6 +49,10 @@ export function requiredNoticeWeeks(businessDays) {
   return 6;
 }
 
+export function rangesOverlap(aStart, aEnd, bStart, bEnd) {
+  return aStart <= bEnd && aEnd >= bStart;
+}
+
 export function evaluateFiling({ start, end, todayStr = todayPST() }) {
   const duration = businessDaysBetween(start, end);
   const weeksNeeded = requiredNoticeWeeks(duration);

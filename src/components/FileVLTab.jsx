@@ -86,6 +86,12 @@ export default function FileVLTab({ leads, filings, onSubmit }) {
                     />
                   </div>
                 </div>
+              ) : result.rejectReason === 'duplicate' ? (
+                <div className="result-box result-rejected">
+                  <strong>Rejected — already filed for these dates</strong>
+                  {result.leadName} already has an approved VL from {result.conflictStart} to {result.conflictEnd},
+                  which overlaps {result.start} to {result.end}. Not added again.
+                </div>
               ) : (
                 <div className="result-box result-rejected">
                   <strong>Rejected — notice period not met</strong>

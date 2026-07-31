@@ -12,7 +12,7 @@ import {
 import { fetchTabAsObjects } from './lib/csv.js';
 import { fetchCalendarMeetings } from './lib/calendarMeetings.js';
 import { postToSheet, filingPayload } from './lib/webhook.js';
-import { evaluateFiling, todayPST } from './lib/dates.js';
+import { evaluateFiling, todayPST, rangesOverlap } from './lib/dates.js';
 import { colorForIndex } from './lib/colors.js';
 import NavCards from './components/NavCards.jsx';
 import HomeTab from './components/HomeTab.jsx';
@@ -130,8 +130,36 @@ export default function App() {
 
   async function submitFiling({ leadName, start, end, reason }) {
     const todayStr = todayPST();
+
+    const duplicate = entries.find(
+      (e) => e.leadName === leadName && rangesOverlap(start, end, e.start, e.end)
+    );
+
+    if (duplicate) {
+      const record = {
+        leadName,
+        start,
+        end,
+        reason,
+        filedOn: todayStr,
+        duration: 0,
+        weeksNeeded: 0,
+        daysNeeded: 0,
+        noticeGiven: 0,
+        approved: false,
+        rejectReason: 'duplicate',
+        conflictStart: duplicate.start,
+        conflictEnd: duplicate.end,
+      };
+      setFilings((prev) => [{ id: `${leadName}-${start}-${end}-local`, ...record }, ...prev]);
+      postToSheet(filingPayload(record)).then((res) => {
+        if (!res.ok) toast('Filed locally, but the sheet write failed — check the webhook URL');
+      });
+      return record;
+    }
+
     const evalResult = evaluateFiling({ start, end, todayStr });
-    const record = { leadName, start, end, reason, filedOn: todayStr, ...evalResult };
+    const record = { leadName, start, end, reason, filedOn: todayStr, rejectReason: 'notice', ...evalResult };
 
     setFilings((prev) => [{ id: `${leadName}-${start}-${end}-local`, ...record }, ...prev]);
 
