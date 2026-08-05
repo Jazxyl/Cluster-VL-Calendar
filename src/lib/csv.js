@@ -56,10 +56,22 @@ export function rowsToObjects(rows) {
   });
 }
 
-export async function fetchTabAsObjects(url) {
+export async function fetchTabAsObjects(url, expectedHeader) {
   if (!url) return [];
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to fetch sheet (${res.status})`);
   const text = await res.text();
-  return rowsToObjects(parseCSV(text));
+  const rows = parseCSV(text);
+
+  // Google's CSV export silently falls back to serving a DIFFERENT tab's
+  // data if the requested tab name doesn't exist, instead of erroring. That's
+  // dangerous — it can quietly show the wrong sheet's content as if it were
+  // correct. If we know what the first header should be, verify it matches
+  // before accepting the data; otherwise treat it as if the tab is empty.
+  if (expectedHeader) {
+    const firstHeader = (rows[0]?.[0] || '').trim();
+    if (firstHeader !== expectedHeader) return [];
+  }
+
+  return rowsToObjects(rows);
 }
