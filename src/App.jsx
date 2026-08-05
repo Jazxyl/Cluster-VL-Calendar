@@ -30,10 +30,12 @@ const NAV_ITEMS = [
 ];
 
 // Fetch a tab, but never let a missing/misnamed tab take down the whole app —
-// each data source degrades to an empty list on its own.
-async function safeFetchTab(tabName) {
+// each data source degrades to an empty list on its own. expectedHeader
+// guards against Google's CSV export silently serving a DIFFERENT tab's data
+// when the requested tab name doesn't exist.
+async function safeFetchTab(tabName, expectedHeader) {
   try {
-    return await fetchTabAsObjects(csvUrlForTab(tabName));
+    return await fetchTabAsObjects(csvUrlForTab(tabName), expectedHeader);
   } catch {
     return [];
   }
@@ -69,11 +71,11 @@ export default function App() {
     setError(null);
     try {
       const [leadRows, filingRows, announcementRows, birthdayRows, aprRows, calendarMeetings] = await Promise.all([
-        safeFetchTab(TEAM_LEADS_TAB),
-        safeFetchTab(FILINGS_TAB),
-        safeFetchTab(ANNOUNCEMENTS_TAB),
-        safeFetchTab(BIRTHDAYS_TAB),
-        safeFetchTab(APRS_TAB),
+        safeFetchTab(TEAM_LEADS_TAB, 'Name'),
+        safeFetchTab(FILINGS_TAB, 'Timestamp'),
+        safeFetchTab(ANNOUNCEMENTS_TAB, 'Message'),
+        safeFetchTab(BIRTHDAYS_TAB, 'Name'),
+        safeFetchTab(APRS_TAB, 'Name'),
         fetchCalendarMeetings(),
       ]);
 
