@@ -1,21 +1,33 @@
-import { daysUntilBirthday, todayPST } from '../lib/dates.js';
+import { todayPST, formatUSDate } from '../lib/dates.js';
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function firstName(fullName) {
   return (fullName || '').trim().split(' ')[0];
 }
 
-export default function HomeTab({ announcements, birthdays, huddles, townhall, aprs }) {
-  const todayStr = todayPST();
+function formatBirthdayDate(mmdd) {
+  const [mm, dd] = mmdd.split('-');
+  const monthIdx = Number(mm) - 1;
+  return `${MONTH_NAMES[monthIdx] || mm} ${Number(dd)}`;
+}
 
-  const upcomingAprs = aprs
+export default function HomeTab({ announcements, birthdays, huddles, townhall, aprs, isAdmin, currentUserName }) {
+  const todayStr = todayPST();
+  const currentMonth = todayStr.split('-')[1];
+
+  const visibleAprs = isAdmin
+    ? aprs
+    : aprs.filter((a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim());
+
+  const upcomingAprs = visibleAprs
     .filter((a) => a.date >= todayStr)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 5);
 
-  const upcomingBirthdays = birthdays
-    .map((b) => ({ ...b, daysAway: daysUntilBirthday(b.date, todayStr) }))
-    .sort((a, b) => a.daysAway - b.daysAway)
-    .slice(0, 6);
+  const birthdaysThisMonth = birthdays
+    .filter((b) => b.date.split('-')[0] === currentMonth)
+    .sort((a, b) => Number(a.date.split('-')[1]) - Number(b.date.split('-')[1]));
 
   return (
     <div>
@@ -30,7 +42,7 @@ export default function HomeTab({ announcements, birthdays, huddles, townhall, a
               {upcomingAprs.length} upcoming APR{upcomingAprs.length === 1 ? '' : 's'}
             </p>
             <p className="home-banner-sub">
-              {upcomingAprs.map((a) => `${firstName(a.name)} · ${a.date}`).join('  ·  ')}
+              {upcomingAprs.map((a) => `${firstName(a.name)} · ${formatUSDate(a.date)}`).join('  ·  ')}
             </p>
           </div>
         </div>
@@ -75,13 +87,13 @@ export default function HomeTab({ announcements, birthdays, huddles, townhall, a
         </div>
 
         <div className="card home-section">
-          <p className="home-section-title">Birthdays</p>
-          {upcomingBirthdays.length === 0 ? (
-            <p className="empty-note">No birthdays on file.</p>
+          <p className="home-section-title">Birthdays this month</p>
+          {birthdaysThisMonth.length === 0 ? (
+            <p className="empty-note">No birthdays this month.</p>
           ) : (
-            upcomingBirthdays.map((b, i) => (
+            birthdaysThisMonth.map((b, i) => (
               <p key={i} className="home-line">
-                {firstName(b.name)} — {b.date}
+                {firstName(b.name)} — {formatBirthdayDate(b.date)}
               </p>
             ))
           )}

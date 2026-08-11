@@ -62,6 +62,45 @@ export function evaluateFiling({ start, end, todayStr = todayPST() }) {
   return { duration, weeksNeeded, daysNeeded, noticeGiven, approved };
 }
 
+const MONTH_LOOKUP = {
+  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+};
+
+// Handles dates coming out of the sheet in either form:
+//   "MM-DD-YYYY" or "MM/DD/YYYY" — typed as plain text, as intended
+//   "DD-Mon-YYYY" (e.g. "11-Feb-2024") — what Google Sheets exports if the
+//   cell got auto-converted to a real Date value instead of staying text
+// Converts either to internal "YYYY-MM-DD", since that's the only form that
+// sorts/compares correctly as plain text.
+export function parseUSDate(input) {
+  const raw = (input || '').trim();
+  if (!raw) return '';
+
+  const numeric = raw.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (numeric) {
+    const [, mm, dd, yyyy] = numeric;
+    return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+  }
+
+  const withMonthName = raw.match(/^(\d{1,2})-([A-Za-z]{3,})-(\d{4})$/);
+  if (withMonthName) {
+    const [, dd, monthName, yyyy] = withMonthName;
+    const mm = MONTH_LOOKUP[monthName.toLowerCase().slice(0, 3)];
+    if (mm) return `${yyyy}-${String(mm).padStart(2, '0')}-${dd.padStart(2, '0')}`;
+  }
+
+  return '';
+}
+
+// Converts an internal "YYYY-MM-DD" date back to "MM-DD-YYYY" for display.
+export function formatUSDate(isoDate) {
+  const parts = (isoDate || '').split('-');
+  if (parts.length !== 3) return isoDate;
+  const [yyyy, mm, dd] = parts;
+  return `${mm}-${dd}-${yyyy}`;
+}
+
 // For recurring birthdays stored as "MM-DD". Returns days until the next
 // occurrence, wrapping to next year if this year's date has already passed.
 export function daysUntilBirthday(mmdd, todayStr = todayPST()) {

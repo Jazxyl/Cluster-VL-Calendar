@@ -17,12 +17,15 @@ Create a new Google Sheet with these tabs:
 
 **`Birthdays`** — two columns: `Name`, `Date` (format `MM-DD`, e.g. `08-03` — no year, since it repeats yearly)
 
-**`APRs`** — two columns: `Name`, `Date` (`YYYY-MM-DD`)
+**`APRs`** — three columns: `Name` (the agent), `Date` (`YYYY-MM-DD`), `TL` (which team lead owns this agent — must exactly match that person's `Name` in the `Users` tab)
 
 **`EOD`** — headers: `Timestamp, Lead, Date, ClientCalls, Coachings, FathomLink, TicketMonitoring, HubspotScreenshot, AttendanceScreenshot`
 
-**`Users`** — one column: `Email` — the allowlist of who's allowed to sign in. Add each team lead's actual
-Google email (any domain, doesn't need to match a company domain).
+**`Users`** — three columns: `Email`, `Name`, `Role`. `Email` is the sign-in allowlist. `Name` must
+exactly match how that person appears as a `TL` value in the `APRs` tab (used to filter APR
+Notifications to their own agents). `Role` is either `TL` or `Admin` — Admins see a list of team
+lead names with APR counts instead of individual agents on the APR Notifications tab and the Home
+banner.
 
 Then publish it so the app can read it:
 **File → Share → Publish to web** → select "Entire document" → Publish.

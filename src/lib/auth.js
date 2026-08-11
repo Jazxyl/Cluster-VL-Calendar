@@ -32,8 +32,11 @@ export function getSession() {
   }
 }
 
-export function saveSession(email) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ email, signedInAt: Date.now() }));
+export function saveSession(email, name, role) {
+  localStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({ email, name: name || '', role: role || 'TL', signedInAt: Date.now() })
+  );
 }
 
 export function clearSession() {

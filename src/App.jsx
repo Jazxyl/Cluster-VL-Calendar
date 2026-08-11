@@ -12,7 +12,7 @@ import {
 import { fetchTabAsObjects } from './lib/csv.js';
 import { fetchCalendarMeetings } from './lib/calendarMeetings.js';
 import { postToSheet, filingPayload } from './lib/webhook.js';
-import { evaluateFiling, todayPST, rangesOverlap } from './lib/dates.js';
+import { evaluateFiling, todayPST, rangesOverlap, parseUSDate } from './lib/dates.js';
 import { colorForIndex } from './lib/colors.js';
 import NavCards from './components/NavCards.jsx';
 import HomeTab from './components/HomeTab.jsx';
@@ -22,6 +22,7 @@ import EODFormTab from './components/EODFormTab.jsx';
 import APRTab from './components/APRTab.jsx';
 import SetupNotice from './components/SetupNotice.jsx';
 import LoginGate from './components/LoginGate.jsx';
+import ClockBar from './components/ClockBar.jsx';
 
 const NAV_ITEMS = [
   { key: 'home', title: 'Home', desc: 'Announcements and schedules', icon: 'home' },
@@ -42,7 +43,10 @@ async function safeFetchTab(tabName, expectedHeader) {
   }
 }
 
-function AppContent() {
+function AppContent({ session }) {
+  const isAdmin = (session?.role || '').toLowerCase() === 'admin';
+  const currentUserName = session?.name || '';
+
   const [nav, setNav] = useState('home');
   const [ptoSubTab, setPtoSubTab] = useState('calendar');
 
@@ -70,55 +74,59 @@ function AppContent() {
     }
     setLoading(true);
     setError(null);
+
+    // Each source updates its own piece of state as soon as it resolves,
+    // rather than waiting for all six before showing anything. The Calendar
+    // meetings fetch in particular is slow (it cold-starts Apps Script and
+    // queries Calendar live) — previously it was blocking every other
+    // section from appearing even though they'd long since finished.
+    const tasks = [
+      safeFetchTab(TEAM_LEADS_TAB, 'Name').then((rows) => {
+        const nextLeads = rows
+          .filter((r) => r.Name && r.Name.trim())
+          .map((r, i) => ({ id: r.Name.trim(), name: r.Name.trim(), color: colorForIndex(i) }));
+        setLeads(nextLeads);
+      }),
+      safeFetchTab(FILINGS_TAB, 'Timestamp').then((rows) => {
+        const nextFilings = rows
+          .filter((r) => r.Lead && r.Start && r.End)
+          .map((r) => ({
+            id: `${r.Lead}-${r.Start}-${r.End}-${r.Timestamp || ''}`,
+            leadName: r.Lead,
+            start: r.Start,
+            end: r.End,
+            approved: (r.Status || '').toLowerCase() === 'approved',
+            filedOn: r.FiledOn || '',
+            duration: Number(r.DurationBusinessDays) || 0,
+            weeksNeeded: r.RequiredNoticeDays ? Math.round(Number(r.RequiredNoticeDays) / 7) : 0,
+            noticeGiven: Number(r.NoticeGivenDays) || 0,
+            reason: r.Note || '',
+          }))
+          .reverse();
+        setFilings(nextFilings);
+      }),
+      safeFetchTab(ANNOUNCEMENTS_TAB, 'Message').then((rows) => {
+        setAnnouncements(rows.filter((r) => r.Message && r.Message.trim()).map((r) => ({ message: r.Message.trim() })));
+      }),
+      safeFetchTab(BIRTHDAYS_TAB, 'Name').then((rows) => {
+        setBirthdays(rows.filter((r) => r.Name && r.Date).map((r) => ({ name: r.Name.trim(), date: r.Date.trim() })));
+      }),
+      safeFetchTab(APRS_TAB, 'Name').then((rows) => {
+        setAprs(
+          rows
+            .filter((r) => r.Name && r.Date)
+            .map((r) => ({ name: r.Name.trim(), date: parseUSDate(r.Date.trim()), tl: (r.TL || '').trim() }))
+            .filter((a) => a.date)
+        );
+      }),
+      fetchCalendarMeetings().then((calendarMeetings) => {
+        setHuddles(calendarMeetings.huddles);
+        setTownhall(calendarMeetings.townhall);
+      }),
+    ];
+
     try {
-      const [leadRows, filingRows, announcementRows, birthdayRows, aprRows, calendarMeetings] = await Promise.all([
-        safeFetchTab(TEAM_LEADS_TAB, 'Name'),
-        safeFetchTab(FILINGS_TAB, 'Timestamp'),
-        safeFetchTab(ANNOUNCEMENTS_TAB, 'Message'),
-        safeFetchTab(BIRTHDAYS_TAB, 'Name'),
-        safeFetchTab(APRS_TAB, 'Name'),
-        fetchCalendarMeetings(),
-      ]);
-
-      const nextLeads = leadRows
-        .filter((r) => r.Name && r.Name.trim())
-        .map((r, i) => ({ id: r.Name.trim(), name: r.Name.trim(), color: colorForIndex(i) }));
-
-      const nextFilings = filingRows
-        .filter((r) => r.Lead && r.Start && r.End)
-        .map((r) => ({
-          id: `${r.Lead}-${r.Start}-${r.End}-${r.Timestamp || ''}`,
-          leadName: r.Lead,
-          start: r.Start,
-          end: r.End,
-          approved: (r.Status || '').toLowerCase() === 'approved',
-          filedOn: r.FiledOn || '',
-          duration: Number(r.DurationBusinessDays) || 0,
-          weeksNeeded: r.RequiredNoticeDays ? Math.round(Number(r.RequiredNoticeDays) / 7) : 0,
-          noticeGiven: Number(r.NoticeGivenDays) || 0,
-          reason: r.Note || '',
-        }))
-        .reverse();
-
-      const nextAnnouncements = announcementRows
-        .filter((r) => r.Message && r.Message.trim())
-        .map((r) => ({ message: r.Message.trim() }));
-
-      const nextBirthdays = birthdayRows
-        .filter((r) => r.Name && r.Date)
-        .map((r) => ({ name: r.Name.trim(), date: r.Date.trim() }));
-
-      const nextAprs = aprRows
-        .filter((r) => r.Name && r.Date)
-        .map((r) => ({ name: r.Name.trim(), date: r.Date.trim() }));
-
-      setLeads(nextLeads);
-      setFilings(nextFilings);
-      setAnnouncements(nextAnnouncements);
-      setBirthdays(nextBirthdays);
-      setHuddles(calendarMeetings.huddles);
-      setTownhall(calendarMeetings.townhall);
-      setAprs(nextAprs);
+      await Promise.all(tasks);
     } catch (err) {
       setError(err.message || 'Failed to load the sheet');
     }
@@ -186,6 +194,7 @@ function AppContent() {
           <p className="sub">{NAV_ITEMS.find((n) => n.key === nav)?.desc || 'Your cluster, all in one place'}</p>
         </div>
         <div className="actions">
+          <ClockBar />
           <button className="ghost" onClick={loadData} disabled={loading}>
             {loading ? 'Refreshing…' : 'Refresh from sheet'}
           </button>
@@ -199,7 +208,15 @@ function AppContent() {
 
       <div key={nav} className="tab-fade">
         {nav === 'home' && (
-          <HomeTab announcements={announcements} birthdays={birthdays} huddles={huddles} townhall={townhall} aprs={aprs} />
+          <HomeTab
+            announcements={announcements}
+            birthdays={birthdays}
+            huddles={huddles}
+            townhall={townhall}
+            aprs={aprs}
+            isAdmin={isAdmin}
+            currentUserName={currentUserName}
+          />
         )}
 
         {nav === 'pto' && (
@@ -226,7 +243,7 @@ function AppContent() {
         )}
 
         {nav === 'eod' && <EODFormTab leads={leads} />}
-        {nav === 'apr' && <APRTab aprs={aprs} />}
+        {nav === 'apr' && <APRTab aprs={aprs} isAdmin={isAdmin} currentUserName={currentUserName} />}
       </div>
 
       <div className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>
@@ -235,9 +252,5 @@ function AppContent() {
 }
 
 export default function App() {
-  return (
-    <LoginGate>
-      <AppContent />
-    </LoginGate>
-  );
+  return <LoginGate>{(session) => <AppContent session={session} />}</LoginGate>;
 }

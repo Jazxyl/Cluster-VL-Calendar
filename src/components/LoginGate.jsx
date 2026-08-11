@@ -48,10 +48,10 @@ export default function LoginGate({ children }) {
     const email = (payload?.email || '').toLowerCase().trim();
 
     const rows = await fetchTabAsObjects(csvUrlForTab(USERS_TAB), 'Email');
-    const allowed = rows.some((r) => (r.Email || '').toLowerCase().trim() === email);
+    const matched = rows.find((r) => (r.Email || '').toLowerCase().trim() === email);
 
-    if (allowed) {
-      saveSession(email);
+    if (matched) {
+      saveSession(email, matched.Name, matched.Role);
       setSession(getSession());
     } else {
       setDeniedEmail(email);
@@ -68,12 +68,12 @@ export default function LoginGate({ children }) {
     return (
       <div>
         <div className="auth-bar">
-          Signed in as {session.email}
+          Signed in as {session.name ? `${session.name} (${session.email})` : session.email}
           <button className="ghost" onClick={handleSignOut} style={{ marginLeft: 10 }}>
             Sign out
           </button>
         </div>
-        {children}
+        {typeof children === 'function' ? children(session) : children}
       </div>
     );
   }
