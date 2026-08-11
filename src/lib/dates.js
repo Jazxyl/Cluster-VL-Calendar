@@ -69,25 +69,29 @@ const MONTH_LOOKUP = {
 
 // Handles dates coming out of the sheet in either form:
 //   "MM-DD-YYYY" or "MM/DD/YYYY" — typed as plain text, as intended
-//   "DD-Mon-YYYY" (e.g. "11-Feb-2024") — what Google Sheets exports if the
-//   cell got auto-converted to a real Date value instead of staying text
+//   "DD-Mon-YY" or "DD-Mon-YYYY" (e.g. "11-Feb-24") — what Google Sheets
+//   actually exports if the cell got auto-converted to a real Date value
 // Converts either to internal "YYYY-MM-DD", since that's the only form that
-// sorts/compares correctly as plain text.
+// sorts/compares correctly as plain text. 2-digit years are assumed 20XX.
+function normalizeYear(yyyy) {
+  return yyyy.length === 2 ? `20${yyyy}` : yyyy;
+}
+
 export function parseUSDate(input) {
   const raw = (input || '').trim();
   if (!raw) return '';
 
-  const numeric = raw.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  const numeric = raw.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2}|\d{4})$/);
   if (numeric) {
     const [, mm, dd, yyyy] = numeric;
-    return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+    return `${normalizeYear(yyyy)}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
   }
 
-  const withMonthName = raw.match(/^(\d{1,2})-([A-Za-z]{3,})-(\d{4})$/);
+  const withMonthName = raw.match(/^(\d{1,2})-([A-Za-z]{3,})-(\d{2}|\d{4})$/);
   if (withMonthName) {
     const [, dd, monthName, yyyy] = withMonthName;
     const mm = MONTH_LOOKUP[monthName.toLowerCase().slice(0, 3)];
-    if (mm) return `${yyyy}-${String(mm).padStart(2, '0')}-${dd.padStart(2, '0')}`;
+    if (mm) return `${normalizeYear(yyyy)}-${String(mm).padStart(2, '0')}-${dd.padStart(2, '0')}`;
   }
 
   return '';
