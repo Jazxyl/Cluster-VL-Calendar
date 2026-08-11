@@ -3,6 +3,7 @@
 
 export const SHEET_ID = import.meta.env.VITE_SHEET_ID || '';
 export const WEBHOOK_URL = import.meta.env.VITE_WEBHOOK_URL || '';
+export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 // Tab (sheet) names inside the Google Sheet. Change these if you named your tabs differently.
 export const TEAM_LEADS_TAB = 'TeamLeads';
@@ -11,6 +12,7 @@ export const ANNOUNCEMENTS_TAB = 'Announcements';
 export const BIRTHDAYS_TAB = 'Birthdays';
 export const APRS_TAB = 'APRs';
 export const EOD_TAB = 'EOD';
+export const USERS_TAB = 'Users';
 
 export function csvUrlForTab(tabName) {
   if (!SHEET_ID) return null;

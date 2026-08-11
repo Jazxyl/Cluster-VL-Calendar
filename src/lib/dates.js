@@ -1,3 +1,10 @@
+export function fmt(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // All "current date" references are pinned to Pacific Time so everyone on the
 // cluster sees the same "today" regardless of their own timezone. This uses
 // the IANA zone (not a fixed UTC-8 offset) so it correctly follows PST/PDT.
@@ -11,13 +18,6 @@ export function todayPST() {
 export function todayPSTDateObj() {
   const [year, month, day] = todayPST().split('-').map(Number);
   return new Date(year, month - 1, day);
-}
-
-export function fmt(d) {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
 }
 
 export function businessDaysBetween(startStr, endStr) {

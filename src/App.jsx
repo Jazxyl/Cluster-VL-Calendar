@@ -21,6 +21,7 @@ import FileVLTab from './components/FileVLTab.jsx';
 import EODFormTab from './components/EODFormTab.jsx';
 import APRTab from './components/APRTab.jsx';
 import SetupNotice from './components/SetupNotice.jsx';
+import LoginGate from './components/LoginGate.jsx';
 
 const NAV_ITEMS = [
   { key: 'home', title: 'Home', desc: 'Announcements and schedules', icon: 'home' },
@@ -30,16 +31,18 @@ const NAV_ITEMS = [
 ];
 
 // Fetch a tab, but never let a missing/misnamed tab take down the whole app —
-// each data source degrades to an empty list on its own.
-async function safeFetchTab(tabName) {
+// each data source degrades to an empty list on its own. expectedHeader
+// guards against Google's CSV export silently serving a DIFFERENT tab's data
+// when the requested tab name doesn't exist.
+async function safeFetchTab(tabName, expectedHeader) {
   try {
-    return await fetchTabAsObjects(csvUrlForTab(tabName));
+    return await fetchTabAsObjects(csvUrlForTab(tabName), expectedHeader);
   } catch {
     return [];
   }
 }
 
-export default function App() {
+function AppContent() {
   const [nav, setNav] = useState('home');
   const [ptoSubTab, setPtoSubTab] = useState('calendar');
 
@@ -69,11 +72,11 @@ export default function App() {
     setError(null);
     try {
       const [leadRows, filingRows, announcementRows, birthdayRows, aprRows, calendarMeetings] = await Promise.all([
-        safeFetchTab(TEAM_LEADS_TAB),
-        safeFetchTab(FILINGS_TAB),
-        safeFetchTab(ANNOUNCEMENTS_TAB),
-        safeFetchTab(BIRTHDAYS_TAB),
-        safeFetchTab(APRS_TAB),
+        safeFetchTab(TEAM_LEADS_TAB, 'Name'),
+        safeFetchTab(FILINGS_TAB, 'Timestamp'),
+        safeFetchTab(ANNOUNCEMENTS_TAB, 'Message'),
+        safeFetchTab(BIRTHDAYS_TAB, 'Name'),
+        safeFetchTab(APRS_TAB, 'Name'),
         fetchCalendarMeetings(),
       ]);
 
@@ -194,7 +197,7 @@ export default function App() {
 
       <NavCards items={NAV_ITEMS} active={nav} onSelect={setNav} />
 
-      <div className="tab-fade">
+      <div key={nav} className="tab-fade">
         {nav === 'home' && (
           <HomeTab announcements={announcements} birthdays={birthdays} huddles={huddles} townhall={townhall} aprs={aprs} />
         )}
@@ -215,8 +218,10 @@ export default function App() {
                 File a VL
               </button>
             </div>
-            {ptoSubTab === 'calendar' && <CalendarTab leads={leads} entries={entries} />}
-            {ptoSubTab === 'file' && <FileVLTab leads={leads} filings={filings} onSubmit={submitFiling} />}
+            <div key={ptoSubTab} className="tab-fade">
+              {ptoSubTab === 'calendar' && <CalendarTab leads={leads} entries={entries} />}
+              {ptoSubTab === 'file' && <FileVLTab leads={leads} filings={filings} onSubmit={submitFiling} />}
+            </div>
           </div>
         )}
 
@@ -226,5 +231,13 @@ export default function App() {
 
       <div className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <LoginGate>
+      <AppContent />
+    </LoginGate>
   );
 }

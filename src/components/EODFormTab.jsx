@@ -19,9 +19,6 @@ export default function EODFormTab({ leads }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
 
-  // Warn if they try to close/navigate away while a submission (with
-  // attachments) is still in flight — losing that silently is worse than
-  // a "are you sure?" prompt.
   useEffect(() => {
     function handleBeforeUnload(e) {
       if (submitting) {
@@ -65,10 +62,6 @@ export default function EODFormTab({ leads }) {
         fileToBase64(attendanceFile),
       ]);
 
-      // Wait for the actual request to finish before confirming — this form
-      // has attachments, so "looks fast but might silently fail if you close
-      // the tab" isn't an acceptable trade here, unlike simpler text-only
-      // submissions elsewhere in the app.
       const res = await postToSheet(
         eodPayload({ ...form, hubspotFile: hubspotEncoded, attendanceFile: attendanceEncoded })
       );

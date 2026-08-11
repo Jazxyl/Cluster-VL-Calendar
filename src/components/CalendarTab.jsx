@@ -1,7 +1,13 @@
 import { useMemo, useState } from 'react';
 import { fmt, todayPST, todayPSTDateObj } from '../lib/dates.js';
 
+function isWeekend(dateStr) {
+  const dow = new Date(dateStr + 'T00:00:00').getDay();
+  return dow === 0 || dow === 6;
+}
+
 function entriesForDate(entries, dateStr) {
+  if (isWeekend(dateStr)) return [];
   return entries.filter((e) => dateStr >= e.start && dateStr <= e.end);
 }
 

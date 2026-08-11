@@ -12,7 +12,6 @@ export function fileToBase64(file) {
     }
     const reader = new FileReader();
     reader.onload = () => {
-      // reader.result looks like "data:image/png;base64,AAAA..." — strip the prefix.
       const base64 = String(reader.result).split(',')[1] || '';
       resolve({ data: base64, name: file.name, mimeType: file.type || 'application/octet-stream' });
     };
