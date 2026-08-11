@@ -1,10 +1,10 @@
-import { todayPST, formatUSDate } from '../lib/dates.js';
+import { todayPST, formatUSDate, isAprUpcoming, daysUntilAprRecurrence } from '../lib/dates.js';
 
 export default function APRTab({ aprs, isAdmin, currentUserName }) {
   const todayStr = todayPST();
 
   if (isAdmin) {
-    const upcoming = aprs.filter((a) => a.date >= todayStr);
+    const upcoming = aprs.filter((a) => isAprUpcoming(a.date, todayStr));
     const byTl = {};
     upcoming.forEach((a) => {
       const tl = a.tl || 'Unassigned';
@@ -34,7 +34,9 @@ export default function APRTab({ aprs, isAdmin, currentUserName }) {
   const mine = aprs.filter(
     (a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim()
   );
-  const upcoming = mine.filter((a) => a.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date));
+  const upcoming = mine
+    .filter((a) => isAprUpcoming(a.date, todayStr))
+    .sort((a, b) => daysUntilAprRecurrence(a.date, todayStr) - daysUntilAprRecurrence(b.date, todayStr));
   const past = mine
     .filter((a) => a.date < todayStr)
     .sort((a, b) => b.date.localeCompare(a.date))
