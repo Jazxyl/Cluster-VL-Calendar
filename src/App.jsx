@@ -6,12 +6,13 @@ import {
   ANNOUNCEMENTS_TAB,
   BIRTHDAYS_TAB,
   APRS_TAB,
+  APR_COMPLETIONS_TAB,
   SHEET_ID,
   WEBHOOK_URL,
 } from './config.js';
 import { fetchTabAsObjects } from './lib/csv.js';
 import { fetchCalendarMeetings } from './lib/calendarMeetings.js';
-import { postToSheet, filingPayload } from './lib/webhook.js';
+import { postToSheet, filingPayload, aprCompletionPayload } from './lib/webhook.js';
 import { evaluateFiling, todayPST, rangesOverlap, parseUSDate } from './lib/dates.js';
 import { colorForIndex } from './lib/colors.js';
 import NavCards from './components/NavCards.jsx';
@@ -57,6 +58,7 @@ function AppContent({ session }) {
   const [huddles, setHuddles] = useState([]);
   const [townhall, setTownhall] = useState(null);
   const [aprs, setAprs] = useState([]);
+  const [aprCompletions, setAprCompletions] = useState(new Set());
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -123,6 +125,12 @@ function AppContent({ session }) {
         setHuddles(calendarMeetings.huddles);
         setTownhall(calendarMeetings.townhall);
       }),
+      safeFetchTab(APR_COMPLETIONS_TAB, 'Timestamp').then((rows) => {
+        const keys = rows
+          .filter((r) => r.Name && r.OccurrenceDate)
+          .map((r) => `${r.Name.trim().toLowerCase()}|${r.OccurrenceDate.trim()}`);
+        setAprCompletions(new Set(keys));
+      }),
     ];
 
     try {
@@ -179,6 +187,14 @@ function AppContent({ session }) {
     });
 
     return record;
+  }
+
+  function submitAprCompletion({ name, tl, occurrenceDate, hubspotLink }) {
+    const key = `${name.trim().toLowerCase()}|${occurrenceDate}`;
+    setAprCompletions((prev) => new Set(prev).add(key));
+    postToSheet(aprCompletionPayload({ name, tl, occurrenceDate, hubspotLink })).then((res) => {
+      if (!res.ok) toast('Marked locally, but the sheet write failed — check the webhook URL');
+    });
   }
 
   if (!SHEET_ID) {
@@ -243,7 +259,15 @@ function AppContent({ session }) {
         )}
 
         {nav === 'eod' && <EODFormTab leads={leads} />}
-        {nav === 'apr' && <APRTab aprs={aprs} isAdmin={isAdmin} currentUserName={currentUserName} />}
+        {nav === 'apr' && (
+          <APRTab
+            aprs={aprs}
+            isAdmin={isAdmin}
+            currentUserName={currentUserName}
+            aprCompletions={aprCompletions}
+            onCompleteApr={submitAprCompletion}
+          />
+        )}
       </div>
 
       <div className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>

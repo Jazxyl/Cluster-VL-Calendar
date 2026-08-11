@@ -127,6 +127,23 @@ export function daysUntilAprRecurrence(isoDate, todayStr = todayPST()) {
   return daysUntilBirthday(mmdd, todayStr);
 }
 
+// The actual date (YYYY-MM-DD) of the next annual occurrence — e.g. if today
+// is 2026-08-12 and the record says "12-Aug-2025", this returns
+// "2026-08-12" (this year's date, not next year's, since it hasn't passed
+// yet today). Used to key completion records so marking one year's APR done
+// doesn't suppress next year's.
+export function nextAprOccurrenceDate(isoDate, todayStr = todayPST()) {
+  const mmdd = (isoDate || '').slice(5);
+  if (mmdd.length !== 5) return '';
+  const [year] = todayStr.split('-');
+  const today = new Date(todayStr + 'T00:00:00');
+  let target = new Date(`${year}-${mmdd}T00:00:00`);
+  if (target < today) {
+    target = new Date(`${Number(year) + 1}-${mmdd}T00:00:00`);
+  }
+  return fmt(target);
+}
+
 // "Upcoming" means the next annual occurrence is today or within the next
 // `windowDays` (default 2 weeks), regardless of what year is on record.
 export function isAprUpcoming(isoDate, todayStr = todayPST(), windowDays = 14) {

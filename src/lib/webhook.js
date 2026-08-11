@@ -49,3 +49,13 @@ export function eodPayload({ leadName, date, clientCalls, coachings, fathomLink,
     attendanceFile,
   };
 }
+
+export function aprCompletionPayload({ name, tl, occurrenceDate, hubspotLink }) {
+  return {
+    type: 'AprCompletion',
+    name,
+    tl,
+    occurrenceDate,
+    hubspotLink,
+  };
+}
