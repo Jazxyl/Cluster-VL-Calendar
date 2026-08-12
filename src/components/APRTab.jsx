@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { todayPST, formatUSDate, isAprRelevant, isAprOverdue, daysFromAprDue, thisYearAprDate } from '../lib/dates.js';
+import { todayPST, formatUSDate, isAprRelevant, isAprOverdue, daysFromAprDue, anchoredAprOccurrence } from '../lib/dates.js';
 
 function completionKey(name, occurrenceDate) {
   return `${(name || '').trim().toLowerCase()}|${occurrenceDate}`;
@@ -56,7 +56,7 @@ export default function APRTab({ aprs, isAdmin, currentUserName, aprCompletions,
   const completions = aprCompletions || new Set();
 
   function withOccurrence(a) {
-    return { ...a, occurrenceDate: thisYearAprDate(a.date, todayStr) };
+    return { ...a, occurrenceDate: anchoredAprOccurrence(a.date, todayStr) };
   }
 
   function notCompleted(a) {

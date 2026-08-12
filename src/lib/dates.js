@@ -117,30 +117,52 @@ export function daysUntilBirthday(mmdd, todayStr = todayPST()) {
   return Math.round((target - today) / 86400000);
 }
 
-// APR dates recur annually on the same month-day (like birthdays). Returns
-// THIS calendar year's occurrence as "YYYY-MM-DD" — deliberately does NOT
-// wrap forward to next year once it's passed, so it can be used to detect
-// "overdue" (due date already passed this year, still not completed)
-// instead of silently rolling forward and disappearing.
-export function thisYearAprDate(isoDate, todayStr = todayPST()) {
+// Fixed to the day this overdue-tracking went live. Prevents every
+// historical APR date on file from instantly flooding in as "overdue" the
+// moment the feature launches — only cycles landing on or after this date
+// ever get evaluated. Change this if you need to re-anchor later.
+const APR_TRACKING_ANCHOR = '2026-08-12';
+
+// Finds the currently-relevant annual occurrence for an APR date, anchored
+// so nothing before APR_TRACKING_ANCHOR is ever considered. Starts at the
+// first occurrence on/after the anchor, then keeps advancing a full year at
+// a time as long as doing so is still on/before today — so it keeps
+// tracking correctly cycle after cycle as real time passes, not just once.
+export function anchoredAprOccurrence(isoDate, todayStr = todayPST()) {
   const mmdd = (isoDate || '').slice(5);
   if (mmdd.length !== 5) return '';
-  const [year] = todayStr.split('-');
-  return `${year}-${mmdd}`;
+
+  let year = Number(APR_TRACKING_ANCHOR.slice(0, 4));
+  let candidate = `${year}-${mmdd}`;
+  if (candidate < APR_TRACKING_ANCHOR) {
+    year += 1;
+    candidate = `${year}-${mmdd}`;
+  }
+
+  while (true) {
+    const next = `${year + 1}-${mmdd}`;
+    if (next <= todayStr) {
+      year += 1;
+      candidate = next;
+    } else {
+      break;
+    }
+  }
+
+  return candidate;
 }
 
-// Positive = N days overdue (due date already passed this year).
+// Positive = N days overdue (anchored occurrence already passed).
 // Negative = N days until due. Zero = due today.
 export function daysFromAprDue(isoDate, todayStr = todayPST()) {
-  const due = thisYearAprDate(isoDate, todayStr);
+  const due = anchoredAprOccurrence(isoDate, todayStr);
   if (!due) return null;
   return calendarDaysBetween(due, todayStr);
 }
 
 // Shows as relevant if due within the next `windowDays` (default 2 weeks)
-// OR already overdue this year by any amount — an overdue APR keeps
-// showing (flagged, not hidden) until it's actually completed. Resets
-// naturally each January, since thisYearAprDate recalculates fresh.
+// OR already overdue by any amount — an overdue APR keeps showing (flagged,
+// not hidden) until it's actually completed.
 export function isAprRelevant(isoDate, todayStr = todayPST(), windowDays = 14) {
   const days = daysFromAprDue(isoDate, todayStr);
   return days !== null && days >= -windowDays;
