@@ -117,36 +117,39 @@ export function daysUntilBirthday(mmdd, todayStr = todayPST()) {
   return Math.round((target - today) / 86400000);
 }
 
-// APR dates recur annually on the same month-day (like birthdays), not as
-// one-time future events — a date of "12-Aug-2025" means the cycle lands on
-// Aug 12 every year, including this year. Reuses the birthday logic against
-// just the "MM-DD" slice of the stored "YYYY-MM-DD" date.
-export function daysUntilAprRecurrence(isoDate, todayStr = todayPST()) {
-  const mmdd = (isoDate || '').slice(5);
-  if (mmdd.length !== 5) return null;
-  return daysUntilBirthday(mmdd, todayStr);
-}
-
-// The actual date (YYYY-MM-DD) of the next annual occurrence — e.g. if today
-// is 2026-08-12 and the record says "12-Aug-2025", this returns
-// "2026-08-12" (this year's date, not next year's, since it hasn't passed
-// yet today). Used to key completion records so marking one year's APR done
-// doesn't suppress next year's.
-export function nextAprOccurrenceDate(isoDate, todayStr = todayPST()) {
+// APR dates recur annually on the same month-day (like birthdays). Returns
+// THIS calendar year's occurrence as "YYYY-MM-DD" — deliberately does NOT
+// wrap forward to next year once it's passed, so it can be used to detect
+// "overdue" (due date already passed this year, still not completed)
+// instead of silently rolling forward and disappearing.
+export function thisYearAprDate(isoDate, todayStr = todayPST()) {
   const mmdd = (isoDate || '').slice(5);
   if (mmdd.length !== 5) return '';
   const [year] = todayStr.split('-');
-  const today = new Date(todayStr + 'T00:00:00');
-  let target = new Date(`${year}-${mmdd}T00:00:00`);
-  if (target < today) {
-    target = new Date(`${Number(year) + 1}-${mmdd}T00:00:00`);
-  }
-  return fmt(target);
+  return `${year}-${mmdd}`;
 }
 
-// "Upcoming" means the next annual occurrence is today or within the next
-// `windowDays` (default 2 weeks), regardless of what year is on record.
-export function isAprUpcoming(isoDate, todayStr = todayPST(), windowDays = 14) {
-  const days = daysUntilAprRecurrence(isoDate, todayStr);
-  return days !== null && days <= windowDays;
+// Positive = N days overdue (due date already passed this year).
+// Negative = N days until due. Zero = due today.
+export function daysFromAprDue(isoDate, todayStr = todayPST()) {
+  const due = thisYearAprDate(isoDate, todayStr);
+  if (!due) return null;
+  return calendarDaysBetween(due, todayStr);
+}
+
+// Shows as relevant if due within the next `windowDays` (default 2 weeks)
+// OR already overdue this year by any amount — an overdue APR keeps
+// showing (flagged, not hidden) until it's actually completed. Resets
+// naturally each January, since thisYearAprDate recalculates fresh.
+export function isAprRelevant(isoDate, todayStr = todayPST(), windowDays = 14) {
+  const days = daysFromAprDue(isoDate, todayStr);
+  return days !== null && days >= -windowDays;
+}
+
+// A due date alone doesn't mean overdue — there's a 7-day grace period.
+// APR date Aug 12 → still just "due" through Aug 18, turns overdue (red)
+// starting Aug 19 (7 days after the due date).
+export function isAprOverdue(isoDate, todayStr = todayPST(), graceDays = 7) {
+  const days = daysFromAprDue(isoDate, todayStr);
+  return days !== null && days >= graceDays;
 }

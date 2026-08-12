@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { todayPST, formatUSDate, isAprUpcoming, daysUntilAprRecurrence, nextAprOccurrenceDate } from '../lib/dates.js';
+import { todayPST, formatUSDate, isAprRelevant, isAprOverdue, daysFromAprDue, thisYearAprDate } from '../lib/dates.js';
 
 function completionKey(name, occurrenceDate) {
   return `${(name || '').trim().toLowerCase()}|${occurrenceDate}`;
 }
 
-function UpcomingAprRow({ apr, occurrenceDate, onCompleteApr }) {
+function UpcomingAprRow({ apr, occurrenceDate, overdue, onCompleteApr }) {
   const [checked, setChecked] = useState(false);
   const [link, setLink] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -26,7 +26,10 @@ function UpcomingAprRow({ apr, occurrenceDate, onCompleteApr }) {
       <div className="hist-row">
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, cursor: 'pointer' }}>
           <input type="checkbox" checked={checked} onChange={handleCheck} />
-          <span className="who">{apr.name}</span>
+          <span className="who" style={overdue ? { color: '#c0392b', fontWeight: 600 } : undefined}>
+            {apr.name}
+            {overdue ? ' — overdue' : ''}
+          </span>
         </label>
         <span className="hist-when">{formatUSDate(apr.date)}</span>
       </div>
@@ -53,7 +56,7 @@ export default function APRTab({ aprs, isAdmin, currentUserName, aprCompletions,
   const completions = aprCompletions || new Set();
 
   function withOccurrence(a) {
-    return { ...a, occurrenceDate: nextAprOccurrenceDate(a.date, todayStr) };
+    return { ...a, occurrenceDate: thisYearAprDate(a.date, todayStr) };
   }
 
   function notCompleted(a) {
@@ -61,14 +64,14 @@ export default function APRTab({ aprs, isAdmin, currentUserName, aprCompletions,
   }
 
   if (isAdmin) {
-    const upcoming = aprs
-      .filter((a) => isAprUpcoming(a.date, todayStr))
+    const relevant = aprs
+      .filter((a) => isAprRelevant(a.date, todayStr))
       .map(withOccurrence)
       .filter(notCompleted)
-      .sort((a, b) => daysUntilAprRecurrence(a.date, todayStr) - daysUntilAprRecurrence(b.date, todayStr));
+      .sort((a, b) => daysFromAprDue(a.date, todayStr) - daysFromAprDue(b.date, todayStr));
 
     const byTl = {};
-    upcoming.forEach((a) => {
+    relevant.forEach((a) => {
       const tl = a.tl || 'Unassigned';
       if (!byTl[tl]) byTl[tl] = [];
       byTl[tl].push(a);
@@ -88,8 +91,14 @@ export default function APRTab({ aprs, isAdmin, currentUserName, aprCompletions,
               <p className="home-section-title">
                 {tl} ({agents.length})
               </p>
-              {agents.map((a, i) => (
-                <UpcomingAprRow key={i} apr={a} occurrenceDate={a.occurrenceDate} onCompleteApr={onCompleteApr} />
+              {agents.map((a) => (
+                <UpcomingAprRow
+                  key={completionKey(a.name, a.occurrenceDate)}
+                  apr={a}
+                  occurrenceDate={a.occurrenceDate}
+                  overdue={isAprOverdue(a.date, todayStr)}
+                  onCompleteApr={onCompleteApr}
+                />
               ))}
             </div>
           ))
@@ -101,11 +110,11 @@ export default function APRTab({ aprs, isAdmin, currentUserName, aprCompletions,
   const mine = aprs.filter(
     (a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim()
   );
-  const upcoming = mine
-    .filter((a) => isAprUpcoming(a.date, todayStr))
+  const relevant = mine
+    .filter((a) => isAprRelevant(a.date, todayStr))
     .map(withOccurrence)
     .filter(notCompleted)
-    .sort((a, b) => daysUntilAprRecurrence(a.date, todayStr) - daysUntilAprRecurrence(b.date, todayStr));
+    .sort((a, b) => daysFromAprDue(a.date, todayStr) - daysFromAprDue(b.date, todayStr));
   const past = mine
     .filter((a) => a.date < todayStr)
     .sort((a, b) => b.date.localeCompare(a.date));
@@ -114,11 +123,17 @@ export default function APRTab({ aprs, isAdmin, currentUserName, aprCompletions,
     <div>
       <div className="card home-section">
         <p className="home-section-title">Upcoming APRs</p>
-        {upcoming.length === 0 ? (
+        {relevant.length === 0 ? (
           <p className="empty-note">No upcoming APRs for your agents.</p>
         ) : (
-          upcoming.map((a, i) => (
-            <UpcomingAprRow key={i} apr={a} occurrenceDate={a.occurrenceDate} onCompleteApr={onCompleteApr} />
+          relevant.map((a) => (
+            <UpcomingAprRow
+              key={completionKey(a.name, a.occurrenceDate)}
+              apr={a}
+              occurrenceDate={a.occurrenceDate}
+              overdue={isAprOverdue(a.date, todayStr)}
+              onCompleteApr={onCompleteApr}
+            />
           ))
         )}
       </div>

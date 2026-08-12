@@ -1,4 +1,4 @@
-import { todayPST, formatUSDate, isAprUpcoming, daysUntilAprRecurrence } from '../lib/dates.js';
+import { todayPST, formatUSDate, isAprRelevant, daysFromAprDue } from '../lib/dates.js';
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -21,8 +21,8 @@ export default function HomeTab({ announcements, birthdays, huddles, townhall, a
     : aprs.filter((a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim());
 
   const upcomingAprs = visibleAprs
-    .filter((a) => isAprUpcoming(a.date, todayStr))
-    .sort((a, b) => daysUntilAprRecurrence(a.date, todayStr) - daysUntilAprRecurrence(b.date, todayStr))
+    .filter((a) => isAprRelevant(a.date, todayStr))
+    .sort((a, b) => daysFromAprDue(a.date, todayStr) - daysFromAprDue(b.date, todayStr))
     .slice(0, 5);
 
   const birthdaysThisMonth = birthdays
