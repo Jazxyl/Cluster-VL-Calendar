@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { todayPST, formatUSDate, isAprRelevant, isAprOverdue, daysFromAprDue, anchoredAprOccurrence } from '../lib/dates.js';
+import { fileToBase64 } from '../lib/files.js';
 
 function completionKey(name, occurrenceDate) {
   return `${(name || '').trim().toLowerCase()}|${occurrenceDate}`;
@@ -8,17 +9,30 @@ function completionKey(name, occurrenceDate) {
 function UpcomingAprRow({ apr, occurrenceDate, overdue, onCompleteApr }) {
   const [checked, setChecked] = useState(false);
   const [link, setLink] = useState('');
+  const [screenshot, setScreenshot] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   function handleCheck(e) {
     setChecked(e.target.checked);
-    if (!e.target.checked) setLink('');
+    if (!e.target.checked) {
+      setLink('');
+      setScreenshot(null);
+      setError('');
+    }
   }
 
-  function handleSubmit() {
-    if (!link.trim()) return;
+  async function handleSubmit() {
+    if (!link.trim() || !screenshot) return;
+    setError('');
     setSubmitting(true);
-    onCompleteApr({ name: apr.name, tl: apr.tl, occurrenceDate, hubspotLink: link.trim() });
+    try {
+      const encoded = await fileToBase64(screenshot);
+      onCompleteApr({ name: apr.name, tl: apr.tl, occurrenceDate, hubspotLink: link.trim(), screenshot: encoded });
+    } catch (err) {
+      setError(err.message || 'Could not read that file.');
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -34,17 +48,28 @@ function UpcomingAprRow({ apr, occurrenceDate, overdue, onCompleteApr }) {
         <span className="hist-when">{formatUSDate(apr.date)}</span>
       </div>
       {checked && (
-        <div style={{ display: 'flex', gap: 6, padding: '0 0 12px 26px' }}>
-          <input
-            type="text"
-            placeholder="Hubspot link for this agent"
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 6, padding: '6px 8px', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-          />
-          <button className="primary" onClick={handleSubmit} disabled={submitting || !link.trim()}>
-            {submitting ? 'Saving…' : 'Save'}
-          </button>
+        <div style={{ padding: '0 0 12px 26px' }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+            <input
+              type="text"
+              placeholder="Hubspot link for this agent"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 6, padding: '6px 8px', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setScreenshot(e.target.files[0] || null)}
+              style={{ flex: 1, fontSize: 12 }}
+            />
+            <button className="primary" onClick={handleSubmit} disabled={submitting || !link.trim() || !screenshot}>
+              {submitting ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+          {error && <p style={{ fontSize: 11, color: '#c0392b', marginTop: 4 }}>{error}</p>}
         </div>
       )}
     </div>

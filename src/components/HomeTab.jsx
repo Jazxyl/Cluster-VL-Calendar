@@ -20,10 +20,11 @@ export default function HomeTab({ announcements, birthdays, huddles, townhall, a
     ? aprs
     : aprs.filter((a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim());
 
-  const upcomingAprs = visibleAprs
+  const relevantAprs = visibleAprs
     .filter((a) => isAprRelevant(a.date, todayStr))
-    .sort((a, b) => daysFromAprDue(a.date, todayStr) - daysFromAprDue(b.date, todayStr))
-    .slice(0, 5);
+    .sort((a, b) => daysFromAprDue(a.date, todayStr) - daysFromAprDue(b.date, todayStr));
+  const upcomingAprs = relevantAprs.slice(0, 5);
+  const moreAprsCount = relevantAprs.length - upcomingAprs.length;
 
   const birthdaysThisMonth = birthdays
     .filter((b) => b.date.split('-')[0] === currentMonth)
@@ -31,7 +32,7 @@ export default function HomeTab({ announcements, birthdays, huddles, townhall, a
 
   return (
     <div>
-      {upcomingAprs.length > 0 && (
+      {relevantAprs.length > 0 && (
         <div className="home-banner">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6EFF7B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 3a5 5 0 0 0-5 5v3.5c0 .9-.4 1.7-1 2.3L5 15h14l-1-1.2c-.6-.6-1-1.4-1-2.3V8a5 5 0 0 0-5-5z" />
@@ -39,10 +40,11 @@ export default function HomeTab({ announcements, birthdays, huddles, townhall, a
           </svg>
           <div>
             <p className="home-banner-title">
-              {upcomingAprs.length} upcoming APR{upcomingAprs.length === 1 ? '' : 's'}
+              {relevantAprs.length} upcoming APR{relevantAprs.length === 1 ? '' : 's'}
             </p>
             <p className="home-banner-sub">
               {upcomingAprs.map((a) => `${firstName(a.name)} · ${formatUSDate(a.date)}`).join('  ·  ')}
+              {moreAprsCount > 0 ? `  ·  +${moreAprsCount} more` : ''}
             </p>
           </div>
         </div>

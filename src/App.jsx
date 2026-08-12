@@ -189,10 +189,10 @@ function AppContent({ session }) {
     return record;
   }
 
-  function submitAprCompletion({ name, tl, occurrenceDate, hubspotLink }) {
+  function submitAprCompletion({ name, tl, occurrenceDate, hubspotLink, screenshot }) {
     const key = `${name.trim().toLowerCase()}|${occurrenceDate}`;
     setAprCompletions((prev) => new Set(prev).add(key));
-    postToSheet(aprCompletionPayload({ name, tl, occurrenceDate, hubspotLink })).then((res) => {
+    postToSheet(aprCompletionPayload({ name, tl, occurrenceDate, hubspotLink, screenshot })).then((res) => {
       if (!res.ok) toast('Marked locally, but the sheet write failed — check the webhook URL');
     });
   }
