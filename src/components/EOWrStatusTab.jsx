@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { recentWeekStarts, formatWeekLabel } from '../lib/dates.js';
+import { recentWeekStarts, formatWeekLabel, lastWeekStart } from '../lib/dates.js';
 
 export default function EOWrStatusTab({ leads, eowrEntries }) {
   const weeks = recentWeekStarts();
-  const [weekStart, setWeekStart] = useState(weeks[0]);
+  const [weekStart, setWeekStart] = useState(lastWeekStart());
 
   const submittedNames = new Set(
     eowrEntries

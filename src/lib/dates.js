@@ -201,19 +201,25 @@ export function formatWeekLabel(mondayISO) {
   return `WS${mm}${dd}`;
 }
 
-// Generates `count` Monday dates going backward, starting from LAST week's
-// Monday (deliberately excludes the current, still-in-progress week, since
-// you only report on a week that's actually finished). Most recent first.
+// The Monday of LAST week specifically (not this week, since you only
+// report on a week that's actually finished).
+export function lastWeekStart(todayStr = todayPST()) {
+  return addDaysISO(mondayOf(todayStr), -7);
+}
+
+// Generates `count` Monday dates going backward from last week, in
+// CHRONOLOGICAL order (oldest first, most recent/last-week last) — so a
+// native <select> naturally scrolls to show the selected "last week" value
+// sitting near the bottom, with older weeks above it. Auto-shifts forward
+// every Monday since it's always computed relative to the real today.
 export function recentWeekStarts(todayStr = todayPST(), count = 104) {
-  const thisWeekMonday = mondayOf(todayStr);
-  const lastWeekMonday = addDaysISO(thisWeekMonday, -7);
   const weeks = [];
-  let cursor = lastWeekMonday;
+  let cursor = lastWeekStart(todayStr);
   for (let i = 0; i < count; i++) {
     weeks.push(cursor);
     cursor = addDaysISO(cursor, -7);
   }
-  return weeks;
+  return weeks.reverse();
 }
 
 // All Monday dates (YYYY-MM-DD) whose date falls within the given

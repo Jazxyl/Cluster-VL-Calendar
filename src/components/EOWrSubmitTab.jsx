@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { recentWeekStarts, formatWeekLabel } from '../lib/dates.js';
+import { recentWeekStarts, formatWeekLabel, lastWeekStart } from '../lib/dates.js';
 
 export default function EOWrSubmitTab({ currentUserName, leads, onSubmit }) {
   const weeks = recentWeekStarts();
-  const [weekStart, setWeekStart] = useState(weeks[0]);
+  const [weekStart, setWeekStart] = useState(lastWeekStart());
   const [leadName, setLeadName] = useState(currentUserName || leads[0]?.name || '');
   const [sheetLink, setSheetLink] = useState('');
   const [submitting, setSubmitting] = useState(false);
