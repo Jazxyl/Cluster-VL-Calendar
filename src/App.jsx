@@ -255,6 +255,7 @@ function AppContent({ session }) {
             aprs={aprs}
             isAdmin={isAdmin}
             currentUserName={currentUserName}
+            onGoToApr={() => setNav('apr')}
           />
         )}
 

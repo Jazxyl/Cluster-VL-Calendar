@@ -12,7 +12,7 @@ function formatBirthdayDate(mmdd) {
   return `${MONTH_NAMES[monthIdx] || mm} ${Number(dd)}`;
 }
 
-export default function HomeTab({ announcements, birthdays, huddles, townhall, aprs, isAdmin, currentUserName }) {
+export default function HomeTab({ announcements, birthdays, huddles, townhall, aprs, isAdmin, currentUserName, onGoToApr }) {
   const todayStr = todayPST();
   const currentMonth = todayStr.split('-')[1];
 
@@ -33,7 +33,7 @@ export default function HomeTab({ announcements, birthdays, huddles, townhall, a
   return (
     <div>
       {relevantAprs.length > 0 && (
-        <div className="home-banner">
+        <div className="home-banner" onClick={onGoToApr} style={{ cursor: 'pointer' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6EFF7B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 3a5 5 0 0 0-5 5v3.5c0 .9-.4 1.7-1 2.3L5 15h14l-1-1.2c-.6-.6-1-1.4-1-2.3V8a5 5 0 0 0-5-5z" />
             <path d="M9.5 19a2.5 2.5 0 0 0 5 0" />
