@@ -170,7 +170,10 @@ function AppContent({ session }) {
   }, [loadData]);
 
   const entries = filings.filter((f) => f.approved);
-  const reportableLeads = leads.filter((l) => !adminNames.has(l.name.toLowerCase()));
+  const reportableLeads = leads.filter((l) => {
+    const firstNameOfLead = l.name.trim().split(' ')[0].toLowerCase();
+    return !adminNames.has(firstNameOfLead);
+  });
 
   async function submitFiling({ leadName, start, end, reason }) {
     const todayStr = todayPST();
