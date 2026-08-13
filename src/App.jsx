@@ -7,19 +7,21 @@ import {
   BIRTHDAYS_TAB,
   APRS_TAB,
   APR_COMPLETIONS_TAB,
+  EOD_TAB,
+  EOWR_TAB,
   SHEET_ID,
   WEBHOOK_URL,
 } from './config.js';
 import { fetchTabAsObjects } from './lib/csv.js';
 import { fetchCalendarMeetings } from './lib/calendarMeetings.js';
-import { postToSheet, filingPayload, aprCompletionPayload } from './lib/webhook.js';
+import { postToSheet, filingPayload, aprCompletionPayload, eowrPayload } from './lib/webhook.js';
 import { evaluateFiling, todayPST, rangesOverlap, parseUSDate } from './lib/dates.js';
 import { colorForIndex } from './lib/colors.js';
 import NavCards from './components/NavCards.jsx';
 import HomeTab from './components/HomeTab.jsx';
 import CalendarTab from './components/CalendarTab.jsx';
 import FileVLTab from './components/FileVLTab.jsx';
-import EODFormTab from './components/EODFormTab.jsx';
+import ReportsTab from './components/ReportsTab.jsx';
 import APRTab from './components/APRTab.jsx';
 import SetupNotice from './components/SetupNotice.jsx';
 import LoginGate from './components/LoginGate.jsx';
@@ -28,7 +30,7 @@ import ClockBar from './components/ClockBar.jsx';
 const NAV_ITEMS = [
   { key: 'home', title: 'Home', desc: 'Announcements and schedules', icon: 'home' },
   { key: 'pto', title: 'PTO Calendar', desc: 'Leave schedule and coverage', icon: 'calendar' },
-  { key: 'eod', title: 'EOD Form', desc: 'Daily report submission', icon: 'form' },
+  { key: 'reports', title: 'Reports', desc: 'EODr and EOWr submissions', icon: 'form' },
   { key: 'apr', title: 'APR Notifications', desc: 'Upcoming reviews', icon: 'bell' },
 ];
 
@@ -59,6 +61,8 @@ function AppContent({ session }) {
   const [townhall, setTownhall] = useState(null);
   const [aprs, setAprs] = useState([]);
   const [aprCompletions, setAprCompletions] = useState(new Set());
+  const [eodEntries, setEodEntries] = useState([]);
+  const [eowrEntries, setEowrEntries] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -131,6 +135,18 @@ function AppContent({ session }) {
           .map((r) => `${r.Name.trim().toLowerCase()}|${r.OccurrenceDate.trim()}`);
         setAprCompletions(new Set(keys));
       }),
+      safeFetchTab(EOD_TAB, 'Timestamp').then((rows) => {
+        setEodEntries(
+          rows.filter((r) => r.Lead && r.Date).map((r) => ({ lead: r.Lead.trim(), date: r.Date.trim() }))
+        );
+      }),
+      safeFetchTab(EOWR_TAB, 'Timestamp').then((rows) => {
+        setEowrEntries(
+          rows
+            .filter((r) => r.TL && r.WeekStart)
+            .map((r) => ({ tl: r.TL.trim(), weekStart: r.WeekStart.trim(), sheetLink: r.SheetLink || '' }))
+        );
+      }),
     ];
 
     try {
@@ -197,6 +213,13 @@ function AppContent({ session }) {
     });
   }
 
+  async function submitEowr({ tl, weekStart, sheetLink }) {
+    const record = { tl, weekStart, sheetLink };
+    setEowrEntries((prev) => [record, ...prev]);
+    const res = await postToSheet(eowrPayload(record));
+    return res;
+  }
+
   if (!SHEET_ID) {
     return <SetupNotice missing="sheet" />;
   }
@@ -258,7 +281,16 @@ function AppContent({ session }) {
           </div>
         )}
 
-        {nav === 'eod' && <EODFormTab leads={leads} />}
+        {nav === 'reports' && (
+          <ReportsTab
+            leads={leads}
+            eodEntries={eodEntries}
+            eowrEntries={eowrEntries}
+            isAdmin={isAdmin}
+            currentUserName={currentUserName}
+            onSubmitEowr={submitEowr}
+          />
+        )}
         {nav === 'apr' && (
           <APRTab
             aprs={aprs}

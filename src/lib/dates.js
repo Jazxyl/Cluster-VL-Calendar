@@ -175,3 +175,67 @@ export function isAprOverdue(isoDate, todayStr = todayPST(), graceDays = 7) {
   const days = daysFromAprDue(isoDate, todayStr);
   return days !== null && days >= graceDays;
 }
+
+// ---- Week-start (Monday-anchored) helpers for EOWr ----
+
+// Returns the Monday (YYYY-MM-DD) of the week containing the given date.
+export function mondayOf(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const dow = d.getDay(); // 0=Sun,1=Mon,...6=Sat
+  const diff = dow === 0 ? -6 : 1 - dow;
+  d.setDate(d.getDate() + diff);
+  return fmt(d);
+}
+
+export function addDaysISO(dateStr, days) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return fmt(d);
+}
+
+// "2026-08-03" -> "WS0803"
+export function formatWeekLabel(mondayISO) {
+  const parts = (mondayISO || '').split('-');
+  if (parts.length !== 3) return mondayISO;
+  const [, mm, dd] = parts;
+  return `WS${mm}${dd}`;
+}
+
+// Generates `count` Monday dates going backward, starting from LAST week's
+// Monday (deliberately excludes the current, still-in-progress week, since
+// you only report on a week that's actually finished). Most recent first.
+export function recentWeekStarts(todayStr = todayPST(), count = 104) {
+  const thisWeekMonday = mondayOf(todayStr);
+  const lastWeekMonday = addDaysISO(thisWeekMonday, -7);
+  const weeks = [];
+  let cursor = lastWeekMonday;
+  for (let i = 0; i < count; i++) {
+    weeks.push(cursor);
+    cursor = addDaysISO(cursor, -7);
+  }
+  return weeks;
+}
+
+// All Monday dates (YYYY-MM-DD) whose date falls within the given
+// year/month (month is 1-12). A week is grouped under whichever month its
+// Monday lands in, even if the rest of that week spills into the next month.
+export function mondaysInMonth(year, month) {
+  const first = new Date(year, month - 1, 1);
+  const last = new Date(year, month, 0);
+  const mondays = [];
+  const d = new Date(first);
+  while (d <= last) {
+    if (d.getDay() === 1) mondays.push(fmt(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return mondays;
+}
+
+const MONTH_FULL_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+export function monthLabel(year, month) {
+  return `${MONTH_FULL_NAMES[month - 1]} ${year}`;
+}

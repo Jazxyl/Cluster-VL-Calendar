@@ -14,6 +14,7 @@ export const APRS_TAB = 'APRs';
 export const EOD_TAB = 'EOD';
 export const USERS_TAB = 'Users';
 export const APR_COMPLETIONS_TAB = 'AprCompletions';
+export const EOWR_TAB = 'EOWr';
 
 export function csvUrlForTab(tabName) {
   if (!SHEET_ID) return null;

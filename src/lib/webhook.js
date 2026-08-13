@@ -60,3 +60,12 @@ export function aprCompletionPayload({ name, tl, occurrenceDate, hubspotLink, sc
     screenshot,
   };
 }
+
+export function eowrPayload({ tl, weekStart, sheetLink }) {
+  return {
+    type: 'EOWr',
+    tl,
+    weekStart,
+    sheetLink,
+  };
+}
