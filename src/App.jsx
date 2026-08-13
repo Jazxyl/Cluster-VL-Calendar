@@ -9,6 +9,7 @@ import {
   APR_COMPLETIONS_TAB,
   EOD_TAB,
   EOWR_TAB,
+  USERS_TAB,
   SHEET_ID,
   WEBHOOK_URL,
 } from './config.js';
@@ -63,6 +64,7 @@ function AppContent({ session }) {
   const [aprCompletions, setAprCompletions] = useState(new Set());
   const [eodEntries, setEodEntries] = useState([]);
   const [eowrEntries, setEowrEntries] = useState([]);
+  const [adminNames, setAdminNames] = useState(new Set());
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -147,6 +149,12 @@ function AppContent({ session }) {
             .map((r) => ({ tl: r.TL.trim(), weekStart: r.WeekStart.trim(), sheetLink: r.SheetLink || '' }))
         );
       }),
+      safeFetchTab(USERS_TAB, 'Email').then((rows) => {
+        const names = rows
+          .filter((r) => r.Name && (r.Role || '').toLowerCase().trim() === 'admin')
+          .map((r) => r.Name.trim().toLowerCase());
+        setAdminNames(new Set(names));
+      }),
     ];
 
     try {
@@ -162,6 +170,7 @@ function AppContent({ session }) {
   }, [loadData]);
 
   const entries = filings.filter((f) => f.approved);
+  const reportableLeads = leads.filter((l) => !adminNames.has(l.name.toLowerCase()));
 
   async function submitFiling({ leadName, start, end, reason }) {
     const todayStr = todayPST();
@@ -284,7 +293,7 @@ function AppContent({ session }) {
 
         {nav === 'reports' && (
           <ReportsTab
-            leads={leads}
+            leads={reportableLeads}
             eodEntries={eodEntries}
             eowrEntries={eowrEntries}
             isAdmin={isAdmin}
