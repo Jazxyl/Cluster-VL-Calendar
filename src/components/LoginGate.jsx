@@ -7,6 +7,7 @@ export default function LoginGate({ children }) {
   const [session, setSession] = useState(() => getSession());
   const [deniedEmail, setDeniedEmail] = useState(null);
   const [checking, setChecking] = useState(false);
+  const [checkError, setCheckError] = useState(null);
   const buttonRef = useRef(null);
 
   useEffect(() => {
@@ -44,19 +45,25 @@ export default function LoginGate({ children }) {
   async function handleCredential(response) {
     setChecking(true);
     setDeniedEmail(null);
-    const payload = decodeJwt(response.credential);
-    const email = (payload?.email || '').toLowerCase().trim();
+    setCheckError(null);
+    try {
+      const payload = decodeJwt(response.credential);
+      const email = (payload?.email || '').toLowerCase().trim();
 
-    const rows = await fetchTabAsObjects(csvUrlForTab(USERS_TAB), 'Email');
-    const matched = rows.find((r) => (r.Email || '').toLowerCase().trim() === email);
+      const rows = await fetchTabAsObjects(csvUrlForTab(USERS_TAB), 'Email');
+      const matched = rows.find((r) => (r.Email || '').toLowerCase().trim() === email);
 
-    if (matched) {
-      saveSession(email, matched.Name, matched.Role);
-      setSession(getSession());
-    } else {
-      setDeniedEmail(email);
+      if (matched) {
+        saveSession(email, matched.Name, matched.Role);
+        setSession(getSession());
+      } else {
+        setDeniedEmail(email);
+      }
+    } catch (err) {
+      setCheckError(err.message || "Couldn't verify access — check your connection and try again.");
+    } finally {
+      setChecking(false);
     }
-    setChecking(false);
   }
 
   function handleSignOut() {
@@ -94,6 +101,12 @@ export default function LoginGate({ children }) {
           <>
             <div ref={buttonRef} style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }} />
             {checking && <p style={{ fontSize: 13, color: 'var(--ink-soft)' }}>Checking access…</p>}
+            {checkError && (
+              <div className="result-box result-rejected" style={{ marginTop: 12, textAlign: 'left' }}>
+                <strong>Couldn't check access</strong>
+                {checkError} Try signing in again.
+              </div>
+            )}
             {deniedEmail && (
               <div className="result-box result-rejected" style={{ marginTop: 12, textAlign: 'left' }}>
                 <strong>Not authorized</strong>
