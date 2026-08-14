@@ -58,6 +58,9 @@ function UpcomingAprRow({ apr, occurrenceDate, overdue, onCompleteApr }) {
               style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 6, padding: '6px 8px', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
             />
           </div>
+          <p style={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--ink-soft)', margin: '0 0 4px' }}>
+            Hubspot screenshot
+          </p>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <input
               type="file"
