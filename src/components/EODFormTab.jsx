@@ -12,8 +12,11 @@ const EMPTY_FORM = {
   ticketMonitoring: '',
 };
 
-export default function EODFormTab({ leads }) {
-  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, leadName: leads?.[0]?.name || '' }));
+export default function EODFormTab({ leads, currentUserName }) {
+  const [form, setForm] = useState(() => ({
+    ...EMPTY_FORM,
+    leadName: currentUserName || leads?.[0]?.name || '',
+  }));
   const [hubspotFile, setHubspotFile] = useState(null);
   const [attendanceFile, setAttendanceFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);

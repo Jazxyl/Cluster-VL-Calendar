@@ -55,7 +55,7 @@ export default function ReportsTab({
               </button>
             </div>
             <div key={eodrSubTab} className="tab-fade">
-              {eodrSubTab === 'submit' && <EODFormTab leads={leads} />}
+              {eodrSubTab === 'submit' && <EODFormTab leads={leads} currentUserName={currentUserName} />}
               {eodrSubTab === 'status' && <EODrStatusTab leads={leads} eodEntries={eodEntries} />}
             </div>
           </div>

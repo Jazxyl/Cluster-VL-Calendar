@@ -174,6 +174,11 @@ function AppContent({ session }) {
     const firstNameOfLead = l.name.trim().split(' ')[0].toLowerCase();
     return !adminNames.has(firstNameOfLead);
   });
+  // The Users sheet stores short first names, but the dropdowns need the
+  // full name from TeamLeads to actually match an option — resolve once here.
+  const currentUserFullName =
+    reportableLeads.find((l) => l.name.trim().split(' ')[0].toLowerCase() === (currentUserName || '').toLowerCase())
+      ?.name || '';
 
   async function submitFiling({ leadName, start, end, reason }) {
     const todayStr = todayPST();
@@ -300,7 +305,7 @@ function AppContent({ session }) {
             eodEntries={eodEntries}
             eowrEntries={eowrEntries}
             isAdmin={isAdmin}
-            currentUserName={currentUserName}
+            currentUserName={currentUserFullName}
             onSubmitEowr={submitEowr}
           />
         )}
