@@ -146,6 +146,16 @@ function doPost(e) {
         data.weekStart || '',
         data.sheetLink || ''
       ]);
+    } else if (data.type === 'TownHallNomination') {
+      var nominationsSheet = getOrCreateSheet(ss, 'TownHallNominations', ['Timestamp', 'TL', 'Agent', 'Client', 'Reason', 'Month']);
+      nominationsSheet.appendRow([
+        new Date(),
+        data.tl || '',
+        data.agent || '',
+        data.client || '',
+        data.reason || '',
+        data.month || ''
+      ]);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ ok: true }))

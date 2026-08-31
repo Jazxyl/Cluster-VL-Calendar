@@ -10,12 +10,13 @@ import {
   EOD_TAB,
   EOWR_TAB,
   USERS_TAB,
+  NOMINATIONS_TAB,
   SHEET_ID,
   WEBHOOK_URL,
 } from './config.js';
 import { fetchTabAsObjects } from './lib/csv.js';
 import { fetchCalendarMeetings } from './lib/calendarMeetings.js';
-import { postToSheet, filingPayload, aprCompletionPayload, eowrPayload } from './lib/webhook.js';
+import { postToSheet, filingPayload, aprCompletionPayload, eowrPayload, nominationPayload } from './lib/webhook.js';
 import { evaluateFiling, todayPST, rangesOverlap, parseUSDate } from './lib/dates.js';
 import { colorForIndex } from './lib/colors.js';
 import NavCards from './components/NavCards.jsx';
@@ -24,6 +25,7 @@ import CalendarTab from './components/CalendarTab.jsx';
 import FileVLTab from './components/FileVLTab.jsx';
 import ReportsTab from './components/ReportsTab.jsx';
 import APRTab from './components/APRTab.jsx';
+import TownHallNominationsTab from './components/TownHallNominationsTab.jsx';
 import SetupNotice from './components/SetupNotice.jsx';
 import LoginGate from './components/LoginGate.jsx';
 import ClockBar from './components/ClockBar.jsx';
@@ -33,6 +35,7 @@ const NAV_ITEMS = [
   { key: 'pto', title: 'PTO Calendar', desc: 'Leave schedule and coverage', icon: 'calendar' },
   { key: 'reports', title: 'Reports', desc: 'EODr and EOWr submissions', icon: 'form' },
   { key: 'apr', title: 'APR Notifications', desc: 'Upcoming reviews', icon: 'bell' },
+  { key: 'nominations', title: 'Town Hall Nominations', desc: 'Recognize your agents', icon: 'star' },
 ];
 
 async function safeFetchTab(tabName, expectedHeader) {
@@ -61,6 +64,7 @@ function AppContent({ session }) {
   const [eodEntries, setEodEntries] = useState([]);
   const [eowrEntries, setEowrEntries] = useState([]);
   const [adminNames, setAdminNames] = useState(new Set());
+  const [nominations, setNominations] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -145,6 +149,19 @@ function AppContent({ session }) {
           .filter((r) => r.Name && (r.Role || '').toLowerCase().trim() === 'admin')
           .map((r) => r.Name.trim().toLowerCase());
         setAdminNames(new Set(names));
+      }),
+      safeFetchTab(NOMINATIONS_TAB, 'Timestamp').then((rows) => {
+        setNominations(
+          rows
+            .filter((r) => r.TL && r.Month)
+            .map((r) => ({
+              tl: r.TL.trim(),
+              agent: r.Agent || '',
+              client: r.Client || '',
+              reason: r.Reason || '',
+              month: r.Month.trim(),
+            }))
+        );
       }),
     ];
 
@@ -233,6 +250,13 @@ function AppContent({ session }) {
     return res;
   }
 
+  async function submitNomination({ tl, agent, client, reason, month }) {
+    const record = { tl, agent, client, reason, month };
+    setNominations((prev) => [record, ...prev]);
+    const res = await postToSheet(nominationPayload(record));
+    return res;
+  }
+
   if (!SHEET_ID) {
     return <SetupNotice missing="sheet" />;
   }
@@ -269,6 +293,9 @@ function AppContent({ session }) {
             isAdmin={isAdmin}
             currentUserName={currentUserName}
             onGoToApr={() => setNav('apr')}
+            nominations={nominations}
+            onGoToNominations={() => setNav('nominations')}
+            currentUserFullName={currentUserFullNameAll}
           />
         )}
 
@@ -319,6 +346,15 @@ function AppContent({ session }) {
             currentUserName={currentUserName}
             aprCompletions={aprCompletions}
             onCompleteApr={submitAprCompletion}
+          />
+        )}
+        {nav === 'nominations' && (
+          <TownHallNominationsTab
+            leads={leads}
+            nominations={nominations}
+            isAdmin={isAdmin}
+            currentUserName={currentUserFullNameAll}
+            onSubmit={submitNomination}
           />
         )}
       </div>

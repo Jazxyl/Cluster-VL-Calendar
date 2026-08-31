@@ -1,4 +1,4 @@
-import { todayPST, formatUSDate, isAprRelevant, daysFromAprDue } from '../lib/dates.js';
+import { todayPST, formatUSDate, isAprRelevant, daysFromAprDue, isNominationReminderWindow, currentMonthKey } from '../lib/dates.js';
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -12,7 +12,7 @@ function formatBirthdayDate(mmdd) {
   return `${MONTH_NAMES[monthIdx] || mm} ${Number(dd)}`;
 }
 
-export default function HomeTab({ announcements, birthdays, huddles, townhall, aprs, isAdmin, currentUserName, onGoToApr }) {
+export default function HomeTab({ announcements, birthdays, huddles, townhall, aprs, isAdmin, currentUserName, onGoToApr, nominations, onGoToNominations, currentUserFullName }) {
   const todayStr = todayPST();
   const currentMonth = todayStr.split('-')[1];
 
@@ -30,6 +30,13 @@ export default function HomeTab({ announcements, birthdays, huddles, townhall, a
     .filter((b) => b.date.split('-')[0] === currentMonth)
     .sort((a, b) => Number(a.date.split('-')[1]) - Number(b.date.split('-')[1]));
 
+  const hasNominatedThisMonth = (nominations || []).some(
+    (n) =>
+      n.tl.toLowerCase().trim() === (currentUserFullName || '').toLowerCase().trim() &&
+      n.month === currentMonthKey(todayStr)
+  );
+  const showNominationReminder = isNominationReminderWindow(todayStr) && !hasNominatedThisMonth;
+
   return (
     <div>
       {relevantAprs.length > 0 && (
@@ -45,6 +52,20 @@ export default function HomeTab({ announcements, birthdays, huddles, townhall, a
             <p className="home-banner-sub">
               {upcomingAprs.map((a) => `${firstName(a.name)} · ${formatUSDate(a.date)}`).join('  ·  ')}
               {moreAprsCount > 0 ? `  ·  +${moreAprsCount} more` : ''}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {showNominationReminder && (
+        <div className="home-banner" onClick={onGoToNominations} style={{ cursor: 'pointer' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#6EFF7B" stroke="#6EFF7B" strokeWidth="1">
+            <path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.6 7-6.2-3.7L5.8 21l1.6-7L2 9.3l7.1-.7L12 2z" />
+          </svg>
+          <div>
+            <p className="home-banner-title">Town Hall Nomination due soon</p>
+            <p className="home-banner-sub">
+              You haven't submitted a nomination this month — submissions close on the 16th.
             </p>
           </div>
         </div>

@@ -65,3 +65,14 @@ export function eowrPayload({ tl, weekStart, sheetLink }) {
     sheetLink,
   };
 }
+
+export function nominationPayload({ tl, agent, client, reason, month }) {
+  return {
+    type: 'TownHallNomination',
+    tl,
+    agent,
+    client,
+    reason,
+    month,
+  };
+}

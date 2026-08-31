@@ -243,3 +243,31 @@ const MONTH_FULL_NAMES = [
 export function monthLabel(year, month) {
   return `${MONTH_FULL_NAMES[month - 1]} ${year}`;
 }
+
+// ---- Month-cycle helpers for Town Hall Nominations ----
+
+export function currentMonthKey(todayStr = todayPST()) {
+  return todayStr.slice(0, 7); // "YYYY-MM"
+}
+
+export function dayOfMonth(todayStr = todayPST()) {
+  return Number(todayStr.slice(8, 10));
+}
+
+// Submissions accepted the 1st through the 16th (inclusive) of each month.
+export function isNominationWindowOpen(todayStr = todayPST()) {
+  return dayOfMonth(todayStr) <= 16;
+}
+
+// Reminder banner shows the 13th through the 16th — 3 days before the
+// deadline through the deadline itself.
+export function isNominationReminderWindow(todayStr = todayPST()) {
+  const d = dayOfMonth(todayStr);
+  return d >= 13 && d <= 16;
+}
+
+export function monthKeyLabel(monthKey) {
+  const [y, m] = (monthKey || '').split('-').map(Number);
+  if (!y || !m) return monthKey;
+  return monthLabel(y, m);
+}
