@@ -35,10 +35,6 @@ const NAV_ITEMS = [
   { key: 'apr', title: 'APR Notifications', desc: 'Upcoming reviews', icon: 'bell' },
 ];
 
-// Fetch a tab, but never let a missing/misnamed tab take down the whole app —
-// each data source degrades to an empty list on its own. expectedHeader
-// guards against Google's CSV export silently serving a DIFFERENT tab's data
-// when the requested tab name doesn't exist.
 async function safeFetchTab(tabName, expectedHeader) {
   try {
     return await fetchTabAsObjects(csvUrlForTab(tabName), expectedHeader);
@@ -83,11 +79,6 @@ function AppContent({ session }) {
     setLoading(true);
     setError(null);
 
-    // Each source updates its own piece of state as soon as it resolves,
-    // rather than waiting for all six before showing anything. The Calendar
-    // meetings fetch in particular is slow (it cold-starts Apps Script and
-    // queries Calendar live) — previously it was blocking every other
-    // section from appearing even though they'd long since finished.
     const tasks = [
       safeFetchTab(TEAM_LEADS_TAB, 'Name').then((rows) => {
         const nextLeads = rows
@@ -179,6 +170,11 @@ function AppContent({ session }) {
   const currentUserFullName =
     reportableLeads.find((l) => l.name.trim().split(' ')[0].toLowerCase() === (currentUserName || '').toLowerCase())
       ?.name || '';
+  // Same resolution but against the FULL leads list (including admins), for
+  // File a VL — admins take PTO too, unlike Reports which they're exempt from.
+  const currentUserFullNameAll =
+    leads.find((l) => l.name.trim().split(' ')[0].toLowerCase() === (currentUserName || '').toLowerCase())?.name ||
+    '';
 
   async function submitFiling({ leadName, start, end, reason }) {
     const todayStr = todayPST();
@@ -294,7 +290,14 @@ function AppContent({ session }) {
             </div>
             <div key={ptoSubTab} className="tab-fade">
               {ptoSubTab === 'calendar' && <CalendarTab leads={leads} entries={entries} />}
-              {ptoSubTab === 'file' && <FileVLTab leads={leads} filings={filings} onSubmit={submitFiling} />}
+              {ptoSubTab === 'file' && (
+                <FileVLTab
+                  leads={leads}
+                  filings={filings}
+                  onSubmit={submitFiling}
+                  currentUserName={currentUserFullNameAll}
+                />
+              )}
             </div>
           </div>
         )}

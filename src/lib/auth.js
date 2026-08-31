@@ -1,11 +1,6 @@
 const SESSION_KEY = 'cluster-joe-session';
 const SESSION_DAYS = 30;
 
-// Decodes a JWT's payload without verifying the signature. That's fine here —
-// this app has no real backend to verify against anyway (same ceiling as the
-// rest of its security model), and the actual identity check already
-// happened on Google's servers before this token was issued. We're just
-// reading the email out of it.
 export function decodeJwt(token) {
   try {
     const payload = token.split('.')[1];

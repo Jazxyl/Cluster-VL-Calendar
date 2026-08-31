@@ -52,10 +52,6 @@ function formatEventTime(d) {
   return Utilities.formatDate(d, APP_TIMEZONE, 'h:mm a');
 }
 
-// Reads the next ~45 days from the default calendar (the account this script
-// is deployed under). Cluster Huddle: exact title match, next 2 occurrences
-// (it happens twice a week). Townhall: title just needs to CONTAIN "Town Hall"
-// since the real titles include the month, e.g. "August 2026 Town Hall".
 function getMeetingsJson() {
   try {
     var cal = CalendarApp.getDefaultCalendar();
@@ -130,6 +126,25 @@ function doPost(e) {
         data.ticketMonitoring || '',
         hubspotUrl,
         attendanceUrl
+      ]);
+    } else if (data.type === 'AprCompletion') {
+      var aprCompletionsSheet = getOrCreateSheet(ss, 'AprCompletions', ['Timestamp', 'Name', 'TL', 'OccurrenceDate', 'HubspotLink', 'ScreenshotLink']);
+      var aprScreenshotUrl = saveScreenshot(data.screenshot);
+      aprCompletionsSheet.appendRow([
+        new Date(),
+        data.name || '',
+        data.tl || '',
+        data.occurrenceDate || '',
+        data.hubspotLink || '',
+        aprScreenshotUrl
+      ]);
+    } else if (data.type === 'EOWr') {
+      var eowrSheet = getOrCreateSheet(ss, 'EOWr', ['Timestamp', 'TL', 'WeekStart', 'SheetLink']);
+      eowrSheet.appendRow([
+        new Date(),
+        data.tl || '',
+        data.weekStart || '',
+        data.sheetLink || ''
       ]);
     }
 

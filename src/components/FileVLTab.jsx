@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { todayPST } from '../lib/dates.js';
 
-export default function FileVLTab({ leads, filings, onSubmit }) {
-  const [leadName, setLeadName] = useState(leads[0]?.name || '');
+export default function FileVLTab({ leads, filings, onSubmit, currentUserName }) {
+  const [leadName, setLeadName] = useState(currentUserName || leads[0]?.name || '');
   const [start, setStart] = useState(todayPST());
   const [end, setEnd] = useState(todayPST());
   const [reason, setReason] = useState('');
   const [result, setResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const activeLead = leadName || leads[0]?.name || '';
+  const activeLead = leadName || currentUserName || leads[0]?.name || '';
 
   async function handleSubmit() {
     if (!activeLead) return;

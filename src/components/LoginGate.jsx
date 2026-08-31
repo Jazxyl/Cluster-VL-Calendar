@@ -11,7 +11,7 @@ export default function LoginGate({ children }) {
   const buttonRef = useRef(null);
 
   useEffect(() => {
-    if (session) return; // already signed in, nothing to render
+    if (session) return;
     if (!GOOGLE_CLIENT_ID) return;
 
     function renderButton() {
@@ -27,8 +27,6 @@ export default function LoginGate({ children }) {
       });
     }
 
-    // The GIS script loads async — poll briefly until it's ready rather than
-    // assuming it's already there by the time this component mounts.
     if (window.google) {
       renderButton();
     } else {

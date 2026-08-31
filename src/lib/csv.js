@@ -1,5 +1,3 @@
-// Minimal CSV parser (handles quoted fields, commas, and embedded newlines) —
-// no dependency needed for the simple flat data this app uses.
 export function parseCSV(text) {
   const rows = [];
   let row = [];
@@ -43,7 +41,6 @@ export function parseCSV(text) {
   return rows.filter((r) => r.some((c) => c.trim() !== ''));
 }
 
-// Converts parsed rows into an array of objects keyed by the header row.
 export function rowsToObjects(rows) {
   if (rows.length === 0) return [];
   const headers = rows[0].map((h) => h.trim());
@@ -63,11 +60,6 @@ export async function fetchTabAsObjects(url, expectedHeader) {
   const text = await res.text();
   const rows = parseCSV(text);
 
-  // Google's CSV export silently falls back to serving a DIFFERENT tab's
-  // data if the requested tab name doesn't exist, instead of erroring. That's
-  // dangerous — it can quietly show the wrong sheet's content as if it were
-  // correct. If we know what the first header should be, verify it matches
-  // before accepting the data; otherwise treat it as if the tab is empty.
   if (expectedHeader) {
     const firstHeader = (rows[0]?.[0] || '').trim();
     if (firstHeader !== expectedHeader) return [];

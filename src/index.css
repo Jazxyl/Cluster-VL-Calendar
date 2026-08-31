@@ -55,6 +55,7 @@ h1 { font-family: 'Space Grotesk', sans-serif; font-size: 28px; margin: 0; color
 .clock-bar { display: flex; gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-soft); }
 .clock-item { white-space: nowrap; }
 .clock-label { color: var(--brand-green); font-weight: 600; margin-right: 4px; }
+
 button { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 9px 14px; cursor: pointer; transition: .15s; }
 button:hover { border-color: var(--navy); }
 button:disabled { opacity: .6; cursor: default; }

@@ -11,7 +11,6 @@ export function fmt(d) {
 const PST_TIMEZONE = 'America/Los_Angeles';
 
 export function todayPST() {
-  // en-CA locale formats as YYYY-MM-DD, which is exactly what we store/compare.
   return new Intl.DateTimeFormat('en-CA', { timeZone: PST_TIMEZONE }).format(new Date());
 }
 
@@ -71,7 +70,7 @@ const MONTH_LOOKUP = {
 //   "MM-DD-YYYY" or "MM/DD/YYYY" — typed as plain text, as intended
 //   "DD-Mon-YY" or "DD-Mon-YYYY" (e.g. "11-Feb-24") — what Google Sheets
 //   actually exports if the cell got auto-converted to a real Date value
-// Converts either to internal "YYYY-MM-DD", since that's the only form that
+// Converts either to internal "YYYY-MM-DD", since that's the only format that
 // sorts/compares correctly as plain text. 2-digit years are assumed 20XX.
 function normalizeYear(yyyy) {
   return yyyy.length === 2 ? `20${yyyy}` : yyyy;
@@ -178,10 +177,9 @@ export function isAprOverdue(isoDate, todayStr = todayPST(), graceDays = 7) {
 
 // ---- Week-start (Monday-anchored) helpers for EOWr ----
 
-// Returns the Monday (YYYY-MM-DD) of the week containing the given date.
 export function mondayOf(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
-  const dow = d.getDay(); // 0=Sun,1=Mon,...6=Sat
+  const dow = d.getDay();
   const diff = dow === 0 ? -6 : 1 - dow;
   d.setDate(d.getDate() + diff);
   return fmt(d);
