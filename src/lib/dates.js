@@ -271,3 +271,11 @@ export function monthKeyLabel(monthKey) {
   if (!y || !m) return monthKey;
   return monthLabel(y, m);
 }
+
+// Formats a "MM-DD" birthday as "Aug 3" for display.
+const SHORT_MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export function formatBirthdayDate(mmdd) {
+  const [mm, dd] = (mmdd || '').split('-');
+  const monthIdx = Number(mm) - 1;
+  return `${SHORT_MONTH_NAMES[monthIdx] || mm} ${Number(dd)}`;
+}

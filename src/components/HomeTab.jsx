@@ -1,15 +1,7 @@
-import { todayPST, formatUSDate, isAprRelevant, daysFromAprDue, isNominationReminderWindow, currentMonthKey } from '../lib/dates.js';
-
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+import { todayPST, formatUSDate, isAprRelevant, daysFromAprDue, isNominationReminderWindow, currentMonthKey, formatBirthdayDate } from '../lib/dates.js';
 
 function firstName(fullName) {
   return (fullName || '').trim().split(' ')[0];
-}
-
-function formatBirthdayDate(mmdd) {
-  const [mm, dd] = mmdd.split('-');
-  const monthIdx = Number(mm) - 1;
-  return `${MONTH_NAMES[monthIdx] || mm} ${Number(dd)}`;
 }
 
 export default function HomeTab({ announcements, birthdays, huddles, townhall, aprs, isAdmin, currentUserName, onGoToApr, nominations, onGoToNominations, currentUserFullName }) {

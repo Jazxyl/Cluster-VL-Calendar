@@ -26,6 +26,7 @@ import FileVLTab from './components/FileVLTab.jsx';
 import ReportsTab from './components/ReportsTab.jsx';
 import APRTab from './components/APRTab.jsx';
 import TownHallNominationsTab from './components/TownHallNominationsTab.jsx';
+import ProfilesTab from './components/ProfilesTab.jsx';
 import SetupNotice from './components/SetupNotice.jsx';
 import LoginGate from './components/LoginGate.jsx';
 import ClockBar from './components/ClockBar.jsx';
@@ -36,6 +37,7 @@ const NAV_ITEMS = [
   { key: 'reports', title: 'Reports', desc: 'EODr and EOWr submissions', icon: 'form' },
   { key: 'apr', title: 'APR Notifications', desc: 'Upcoming reviews', icon: 'bell' },
   { key: 'nominations', title: 'Town Hall Nominations', desc: 'Recognize your agents', icon: 'star' },
+  { key: 'profiles', title: 'Profiles', desc: 'Meet the team', icon: 'profile' },
 ];
 
 async function safeFetchTab(tabName, expectedHeader) {
@@ -65,6 +67,7 @@ function AppContent({ session }) {
   const [eowrEntries, setEowrEntries] = useState([]);
   const [adminNames, setAdminNames] = useState(new Set());
   const [nominations, setNominations] = useState([]);
+  const [userEmails, setUserEmails] = useState({});
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -87,7 +90,7 @@ function AppContent({ session }) {
       safeFetchTab(TEAM_LEADS_TAB, 'Name').then((rows) => {
         const nextLeads = rows
           .filter((r) => r.Name && r.Name.trim())
-          .map((r, i) => ({ id: r.Name.trim(), name: r.Name.trim(), color: colorForIndex(i) }));
+          .map((r, i) => ({ id: r.Name.trim(), name: r.Name.trim(), color: colorForIndex(i), photoLink: r.PhotoLink || '' }));
         setLeads(nextLeads);
       }),
       safeFetchTab(FILINGS_TAB, 'Timestamp').then((rows) => {
@@ -149,6 +152,12 @@ function AppContent({ session }) {
           .filter((r) => r.Name && (r.Role || '').toLowerCase().trim() === 'admin')
           .map((r) => r.Name.trim().toLowerCase());
         setAdminNames(new Set(names));
+
+        const emailMap = {};
+        rows.forEach((r) => {
+          if (r.Name && r.Email) emailMap[r.Name.trim().toLowerCase()] = r.Email.trim();
+        });
+        setUserEmails(emailMap);
       }),
       safeFetchTab(NOMINATIONS_TAB, 'Timestamp').then((rows) => {
         setNominations(
@@ -358,6 +367,7 @@ function AppContent({ session }) {
             onSubmit={submitNomination}
           />
         )}
+        {nav === 'profiles' && <ProfilesTab leads={leads} userEmails={userEmails} birthdays={birthdays} />}
       </div>
 
       <div className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>

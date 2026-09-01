@@ -24,6 +24,12 @@ const ICONS = {
   star: (
     <path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.6 7-6.2-3.7L5.8 21l1.6-7L2 9.3l7.1-.7L12 2z" />
   ),
+  profile: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+    </>
+  ),
 };
 
 function NavIcon({ name, color }) {
