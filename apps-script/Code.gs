@@ -147,14 +147,15 @@ function doPost(e) {
         data.sheetLink || ''
       ]);
     } else if (data.type === 'TownHallNomination') {
-      var nominationsSheet = getOrCreateSheet(ss, 'TownHallNominations', ['Timestamp', 'TL', 'Agent', 'Client', 'Reason', 'Month']);
+      var nominationsSheet = getOrCreateSheet(ss, 'TownHallNominations', ['Timestamp', 'TL', 'Agent', 'Client', 'Reason', 'Month', 'RecordingLink']);
       nominationsSheet.appendRow([
         new Date(),
         data.tl || '',
         data.agent || '',
         data.client || '',
         data.reason || '',
-        data.month || ''
+        data.month || '',
+        data.recordingLink || ''
       ]);
     }
 

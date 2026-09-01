@@ -19,9 +19,7 @@ export default function TownHallNominationsTab({ leads, nominations, isAdmin, cu
         {subTab === 'submit' && (
           <NominationSubmitTab leads={leads} currentUserName={currentUserName} nominations={nominations} onSubmit={onSubmit} />
         )}
-        {subTab === 'status' && (
-          <NominationStatusTab nominations={nominations} isAdmin={isAdmin} currentUserName={currentUserName} />
-        )}
+        {subTab === 'status' && <NominationStatusTab leads={leads} nominations={nominations} />}
       </div>
     </div>
   );

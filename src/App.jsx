@@ -160,6 +160,7 @@ function AppContent({ session }) {
               client: r.Client || '',
               reason: r.Reason || '',
               month: r.Month.trim(),
+              recordingLink: r.RecordingLink || '',
             }))
         );
       }),
@@ -250,8 +251,8 @@ function AppContent({ session }) {
     return res;
   }
 
-  async function submitNomination({ tl, agent, client, reason, month }) {
-    const record = { tl, agent, client, reason, month };
+  async function submitNomination({ tl, agent, client, reason, month, recordingLink }) {
+    const record = { tl, agent, client, reason, month, recordingLink };
     setNominations((prev) => [record, ...prev]);
     const res = await postToSheet(nominationPayload(record));
     return res;

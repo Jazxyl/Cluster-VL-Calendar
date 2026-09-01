@@ -1,69 +1,42 @@
-import { monthKeyLabel } from '../lib/dates.js';
+import { todayPST, currentMonthKey } from '../lib/dates.js';
 
-export default function NominationStatusTab({ nominations, isAdmin, currentUserName }) {
-  if (isAdmin) {
-    const byMonth = {};
-    nominations.forEach((n) => {
-      if (!byMonth[n.month]) byMonth[n.month] = [];
-      byMonth[n.month].push(n);
-    });
-    const monthKeys = Object.keys(byMonth).sort((a, b) => b.localeCompare(a));
+export default function NominationStatusTab({ leads, nominations }) {
+  const thisMonth = currentMonthKey(todayPST());
 
-    return (
-      <div>
-        {monthKeys.length === 0 ? (
-          <div className="card home-section">
-            <p className="home-section-title">Nominations</p>
-            <p className="empty-note">No nominations submitted yet.</p>
-          </div>
-        ) : (
-          monthKeys.map((mk) => (
-            <div className="card home-section" key={mk}>
-              <p className="home-section-title">
-                {monthKeyLabel(mk)} ({byMonth[mk].length})
-              </p>
-              {byMonth[mk].map((n, i) => (
-                <div
-                  key={i}
-                  style={{
-                    padding: '8px 0',
-                    borderBottom: i < byMonth[mk].length - 1 ? '0.5px solid var(--line)' : 'none',
-                  }}
-                >
-                  <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>
-                    {n.agent} <span style={{ fontWeight: 400, color: 'var(--ink-soft)' }}>· {n.client}</span>
-                  </p>
-                  <p style={{ margin: 0, fontSize: 12, color: 'var(--ink-soft)' }}>{n.reason}</p>
-                  <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--ink-soft)' }}>Nominated by {n.tl}</p>
-                </div>
-              ))}
-            </div>
-          ))
-        )}
-      </div>
-    );
-  }
-
-  const mine = nominations.filter(
-    (n) => n.tl.toLowerCase().trim() === (currentUserName || '').toLowerCase().trim()
+  const submittedNames = new Set(
+    nominations
+      .filter((n) => n.month === thisMonth)
+      .map((n) => n.tl.toLowerCase().trim())
   );
-  const sorted = mine.sort((a, b) => b.month.localeCompare(a.month));
+
+  const rows = leads.map((l) => ({
+    ...l,
+    submitted: submittedNames.has(l.name.toLowerCase().trim()),
+  }));
+  const submittedCount = rows.filter((r) => r.submitted).length;
 
   return (
     <div className="card home-section">
-      <p className="home-section-title">Your nominations</p>
-      {sorted.length === 0 ? (
-        <p className="empty-note">You haven't nominated anyone yet.</p>
+      <p style={{ fontSize: 12, color: 'var(--ink-soft)', margin: '4px 0 12px' }}>
+        {submittedCount} / {leads.length} submitted this month
+      </p>
+      {leads.length === 0 ? (
+        <p className="empty-note">No team leads on file.</p>
       ) : (
-        sorted.map((n, i) => (
-          <div
-            key={i}
-            style={{ padding: '8px 0', borderBottom: i < sorted.length - 1 ? '0.5px solid var(--line)' : 'none' }}
-          >
-            <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>
-              {monthKeyLabel(n.month)} — {n.agent} <span style={{ fontWeight: 400, color: 'var(--ink-soft)' }}>· {n.client}</span>
-            </p>
-            <p style={{ margin: 0, fontSize: 12, color: 'var(--ink-soft)' }}>{n.reason}</p>
+        rows.map((r) => (
+          <div className="hist-row" key={r.id}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {r.submitted ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#69C920" strokeWidth="3">
+                  <path d="M4 12l6 6L20 6" />
+                </svg>
+              ) : (
+                <span style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid #c2c7d6', display: 'inline-block' }} />
+              )}
+              <span className="who" style={{ flex: 'none', color: r.submitted ? 'var(--ink)' : 'var(--ink-soft)' }}>
+                {r.name}
+              </span>
+            </span>
           </div>
         ))
       )}

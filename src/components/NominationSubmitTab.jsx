@@ -10,6 +10,7 @@ export default function NominationSubmitTab({ leads, currentUserName, nomination
   const [agent, setAgent] = useState('');
   const [client, setClient] = useState('');
   const [reason, setReason] = useState('');
+  const [recordingLink, setRecordingLink] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
 
@@ -40,12 +41,20 @@ export default function NominationSubmitTab({ leads, currentUserName, nomination
 
     setSubmitting(true);
     setResult(null);
-    const res = await onSubmit({ tl: tlName, agent: agent.trim(), client: client.trim(), reason: reason.trim(), month: thisMonth });
+    const res = await onSubmit({
+      tl: tlName,
+      agent: agent.trim(),
+      client: client.trim(),
+      reason: reason.trim(),
+      month: thisMonth,
+      recordingLink: recordingLink.trim(),
+    });
     if (res.ok) {
       setResult({ ok: true, message: '✅ Nomination submitted!' });
       setAgent('');
       setClient('');
       setReason('');
+      setRecordingLink('');
     } else {
       setResult({ ok: false, message: "Couldn't reach the sheet — check the webhook URL and try again." });
     }
@@ -91,6 +100,16 @@ export default function NominationSubmitTab({ leads, currentUserName, nomination
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 6, padding: 8, fontSize: 13, fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', resize: 'vertical' }}
+        />
+      </div>
+
+      <div className="field">
+        <label>Client recording link (optional)</label>
+        <input
+          type="text"
+          placeholder="https://... (if available)"
+          value={recordingLink}
+          onChange={(e) => setRecordingLink(e.target.value)}
         />
       </div>
 

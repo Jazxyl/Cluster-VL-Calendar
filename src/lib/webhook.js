@@ -66,7 +66,7 @@ export function eowrPayload({ tl, weekStart, sheetLink }) {
   };
 }
 
-export function nominationPayload({ tl, agent, client, reason, month }) {
+export function nominationPayload({ tl, agent, client, reason, month, recordingLink }) {
   return {
     type: 'TownHallNomination',
     tl,
@@ -74,5 +74,6 @@ export function nominationPayload({ tl, agent, client, reason, month }) {
     client,
     reason,
     month,
+    recordingLink,
   };
 }
