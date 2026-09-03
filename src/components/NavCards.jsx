@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { formatBirthdayDate } from '../lib/dates.js';
+
 const ICONS = {
   home: (
     <path d="M4 12l8-8 8 8M6 10v10h5v-6h2v6h5V10" />
@@ -52,7 +55,115 @@ function NavIcon({ name, color }) {
   );
 }
 
-export default function NavCards({ items, active, onSelect, isOpen, onClose }) {
+function initials(fullName) {
+  const parts = (fullName || '').trim().split(' ');
+  const first = parts[0]?.[0] || '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase();
+}
+
+function UserMenu({ session, currentLead, currentEmail, currentBirthday, rosterAgents, onSignOut }) {
+  const [open, setOpen] = useState(false);
+  const [view, setView] = useState(null); // null | 'profile' | 'roster'
+  const [imgFailed, setImgFailed] = useState(false);
+
+  const displayName = currentLead?.name || session?.name || 'Account';
+  const showPhoto = currentLead?.photoLink && !imgFailed;
+
+  function toggleMenu() {
+    setOpen((o) => {
+      if (o) setView(null);
+      return !o;
+    });
+  }
+
+  return (
+    <div className="sidebar-usermenu">
+      {open && (
+        <div className="sidebar-user-panel">
+          {view === null && (
+            <>
+              <button className="sidebar-user-option" onClick={() => setView('profile')}>
+                Profile
+              </button>
+              <button className="sidebar-user-option" onClick={() => setView('roster')}>
+                Roster
+              </button>
+              <button className="sidebar-user-option sidebar-user-option-danger" onClick={onSignOut}>
+                Sign out
+              </button>
+            </>
+          )}
+          {view === 'profile' && (
+            <div>
+              <button className="sidebar-user-back" onClick={() => setView(null)}>
+                ← Back
+              </button>
+              <div className="sidebar-user-detail">
+                <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--navy)' }}>{displayName}</p>
+                <p style={{ margin: '0 0 2px' }}>{currentEmail || 'No email on file'}</p>
+                <p style={{ margin: 0 }}>
+                  {currentBirthday ? formatBirthdayDate(currentBirthday.date) : 'No birthday on file'}
+                </p>
+              </div>
+            </div>
+          )}
+          {view === 'roster' && (
+            <div>
+              <button className="sidebar-user-back" onClick={() => setView(null)}>
+                ← Back
+              </button>
+              <div className="sidebar-user-detail">
+                {rosterAgents.length === 0 ? (
+                  <p style={{ margin: 0 }}>No agents on file.</p>
+                ) : (
+                  rosterAgents.map((name, i) => (
+                    <p key={i} style={{ margin: '0 0 2px' }}>
+                      {name}
+                    </p>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <button className="sidebar-user-trigger" onClick={toggleMenu}>
+        {showPhoto ? (
+          <img
+            src={currentLead.photoLink}
+            alt={displayName}
+            className="sidebar-user-avatar"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <div
+            className="sidebar-user-avatar sidebar-user-avatar-fallback"
+            style={{ background: currentLead?.color || '#69C920' }}
+          >
+            {initials(displayName)}
+          </div>
+        )}
+        <span className="sidebar-user-name">{displayName}</span>
+      </button>
+    </div>
+  );
+}
+
+export default function NavCards({
+  items,
+  active,
+  onSelect,
+  isOpen,
+  onClose,
+  session,
+  currentLead,
+  currentEmail,
+  currentBirthday,
+  rosterAgents,
+  onSignOut,
+}) {
   return (
     <>
       {isOpen && <div className="sidebar-backdrop" onClick={onClose} />}
@@ -74,6 +185,15 @@ export default function NavCards({ items, active, onSelect, isOpen, onClose }) {
             </button>
           );
         })}
+
+        <UserMenu
+          session={session}
+          currentLead={currentLead}
+          currentEmail={currentEmail}
+          currentBirthday={currentBirthday}
+          rosterAgents={rosterAgents || []}
+          onSignOut={onSignOut}
+        />
       </div>
     </>
   );

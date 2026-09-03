@@ -70,17 +70,7 @@ export default function LoginGate({ children }) {
   }
 
   if (session) {
-    return (
-      <div>
-        <div className="auth-bar">
-          Signed in as {session.name ? `${session.name} (${session.email})` : session.email}
-          <button className="ghost" onClick={handleSignOut} style={{ marginLeft: 10 }}>
-            Sign out
-          </button>
-        </div>
-        {typeof children === 'function' ? children(session) : children}
-      </div>
-    );
+    return typeof children === 'function' ? children(session, handleSignOut) : children;
   }
 
   return (

@@ -64,7 +64,7 @@ async function safeFetchTab(tabName, expectedHeader) {
   }
 }
 
-function AppContent({ session }) {
+function AppContent({ session, onSignOut }) {
   const isAdmin = (session?.role || '').toLowerCase() === 'admin';
   const currentUserName = session?.name || '';
 
@@ -261,6 +261,21 @@ function AppContent({ session }) {
     leads.find((l) => l.name.trim().split(' ')[0].toLowerCase() === (currentUserName || '').toLowerCase())?.name ||
     '';
 
+  // Data for the sidebar user menu: the person's own lead record (photo,
+  // color), email, birthday, and the roster of agents assigned to them
+  // (matched via APRs.TL, which uses short names).
+  const currentLead = leads.find((l) => l.name === currentUserFullNameAll) || null;
+  const currentEmail = userEmails[(currentUserName || '').toLowerCase()] || '';
+  const currentBirthday =
+    birthdays.find((b) => b.name.toLowerCase().trim() === currentUserFullNameAll.toLowerCase().trim()) || null;
+  const rosterAgents = [
+    ...new Set(
+      aprs
+        .filter((a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim())
+        .map((a) => a.name)
+    ),
+  ];
+
   async function submitFiling({ leadName, start, end, reason }) {
     const todayStr = todayPST();
 
@@ -359,6 +374,12 @@ function AppContent({ session }) {
         onSelect={setNav}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        session={session}
+        currentLead={currentLead}
+        currentEmail={currentEmail}
+        currentBirthday={currentBirthday}
+        rosterAgents={rosterAgents}
+        onSignOut={onSignOut}
       />
       <div className="main-area">
         <div className="wrap">
@@ -494,5 +515,5 @@ function AppContent({ session }) {
 }
 
 export default function App() {
-  return <LoginGate>{(session) => <AppContent session={session} />}</LoginGate>;
+  return <LoginGate>{(session, onSignOut) => <AppContent session={session} onSignOut={onSignOut} />}</LoginGate>;
 }
