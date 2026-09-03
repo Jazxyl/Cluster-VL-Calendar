@@ -51,9 +51,9 @@ const NAV_ITEMS = [
   { key: 'home', title: 'Home', desc: 'Announcements and schedules', icon: 'home' },
   { key: 'pto', title: 'PTO Calendar', desc: 'Leave schedule and coverage', icon: 'calendar' },
   { key: 'reports', title: 'Reports', desc: 'EODr and EOWr submissions', icon: 'form' },
-  { key: 'apr', title: 'APR Notifications', desc: 'Upcoming reviews', icon: 'bell' },
-  { key: 'nominations', title: 'Town Hall Nominations', desc: 'Recognize your agents', icon: 'star' },
   { key: 'coaching', title: 'Coaching Compliance', desc: 'Log coaching sessions', icon: 'coaching' },
+  { key: 'nominations', title: 'Town Hall Nominations', desc: 'Recognize your agents', icon: 'star' },
+  { key: 'apr', title: 'APR Notifications', desc: 'Upcoming reviews', icon: 'bell' },
   { key: 'expansionbonus', title: 'Expansion Bonus', desc: 'Track and process bonuses', icon: 'dollar' },
   { key: 'profiles', title: 'Profiles', desc: 'Meet the team', icon: 'profile' },
 ];
