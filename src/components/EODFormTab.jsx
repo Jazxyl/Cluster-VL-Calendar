@@ -12,7 +12,7 @@ const EMPTY_FORM = {
   ticketMonitoring: '',
 };
 
-export default function EODFormTab({ leads, currentUserName, showSuccessModal }) {
+export default function EODFormTab({ leads, currentUserName, showSuccessModal, toast }) {
   const [form, setForm] = useState(() => ({
     ...EMPTY_FORM,
     leadName: currentUserName || leads?.[0]?.name || '',
@@ -65,18 +65,16 @@ export default function EODFormTab({ leads, currentUserName, showSuccessModal })
         fileToBase64(attendanceFile),
       ]);
 
-      const res = await postToSheet(
-        eodPayload({ ...form, hubspotFile: hubspotEncoded, attendanceFile: attendanceEncoded })
+      postToSheet(eodPayload({ ...form, hubspotFile: hubspotEncoded, attendanceFile: attendanceEncoded })).then(
+        (res) => {
+          if (!res.ok) toast('Submitted locally, but the sheet write failed — check the webhook URL');
+        }
       );
 
-      if (res.ok) {
-        showSuccessModal('EOD submitted!');
-        setForm((prev) => ({ ...EMPTY_FORM, leadName: prev.leadName }));
-        setHubspotFile(null);
-        setAttendanceFile(null);
-      } else {
-        setResult({ ok: false, message: "Couldn't reach the sheet — check the webhook URL and try again." });
-      }
+      showSuccessModal('EOD submitted!');
+      setForm((prev) => ({ ...EMPTY_FORM, leadName: prev.leadName }));
+      setHubspotFile(null);
+      setAttendanceFile(null);
     } catch (err) {
       setResult({ ok: false, message: err.message || 'Something went wrong reading a file.' });
     }

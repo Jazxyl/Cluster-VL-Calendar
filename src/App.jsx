@@ -335,25 +335,31 @@ function AppContent({ session, onSignOut }) {
     });
   }
 
-  async function submitEowr({ tl, weekStart, sheetLink }) {
+  function submitEowr({ tl, weekStart, sheetLink }) {
     const record = { tl, weekStart, sheetLink };
     setEowrEntries((prev) => [record, ...prev]);
-    const res = await postToSheet(eowrPayload(record));
-    return res;
+    postToSheet(eowrPayload(record)).then((res) => {
+      if (!res.ok) toast('Submitted locally, but the sheet write failed — check the webhook URL');
+    });
+    return { ok: true };
   }
 
-  async function submitNomination({ tl, agent, client, reason, month, recordingLink }) {
+  function submitNomination({ tl, agent, client, reason, month, recordingLink }) {
     const record = { tl, agent, client, reason, month, recordingLink };
     setNominations((prev) => [record, ...prev]);
-    const res = await postToSheet(nominationPayload(record));
-    return res;
+    postToSheet(nominationPayload(record)).then((res) => {
+      if (!res.ok) toast('Submitted locally, but the sheet write failed — check the webhook URL');
+    });
+    return { ok: true };
   }
 
-  async function submitExpansionBonus({ timestamp, tl, agent, client, startDate, hubspotLink }) {
+  function submitExpansionBonus({ timestamp, tl, agent, client, startDate, hubspotLink }) {
     const record = { timestamp, tl, agent, client, startDate, hubspotLink };
     setExpansionBonuses((prev) => [record, ...prev]);
-    const res = await postToSheet(expansionBonusPayload(record));
-    return res;
+    postToSheet(expansionBonusPayload(record)).then((res) => {
+      if (!res.ok) toast('Submitted locally, but the sheet write failed — check the webhook URL');
+    });
+    return { ok: true };
   }
 
   function processExpansionBonus({ originalTimestamp, notes }) {
@@ -364,18 +370,22 @@ function AppContent({ session, onSignOut }) {
     });
   }
 
-  async function submitCoaching({ tl, agent, type, fathomLink }) {
+  function submitCoaching({ tl, agent, type, fathomLink }) {
     const record = { tl, agent, type, fathomLink };
     setCoachingEntries((prev) => [record, ...prev]);
-    const res = await postToSheet(coachingCompliancePayload(record));
-    return res;
+    postToSheet(coachingCompliancePayload(record)).then((res) => {
+      if (!res.ok) toast('Submitted locally, but the sheet write failed — check the webhook URL');
+    });
+    return { ok: true };
   }
 
-  async function submitAddAgent({ name, hubstaffId, date }) {
+  function submitAddAgent({ name, hubstaffId, date }) {
     const record = { name, date, tl: currentUserName, hubstaffId, status: 'Active' };
     setAprs((prev) => [record, ...prev]);
-    const res = await postToSheet(addAgentPayload({ name, tl: currentUserName, hubstaffId, date }));
-    return res;
+    postToSheet(addAgentPayload({ name, tl: currentUserName, hubstaffId, date })).then((res) => {
+      if (!res.ok) toast('Added locally, but the sheet write failed — check the webhook URL');
+    });
+    return { ok: true };
   }
 
   async function removeAgent({ name, tl, hubstaffId }) {
@@ -515,6 +525,7 @@ function AppContent({ session, onSignOut }) {
             currentUserName={currentUserName}
             onSubmitEowr={submitEowr}
             showSuccessModal={showSuccessModal}
+            toast={toast}
           />
         )}
         {nav === 'apr' && (

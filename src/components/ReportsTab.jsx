@@ -13,6 +13,7 @@ export default function ReportsTab({
   currentUserName,
   onSubmitEowr,
   showSuccessModal,
+  toast,
 }) {
   const [reportTab, setReportTab] = useState('eodr');
   const [eodrSubTab, setEodrSubTab] = useState('submit');
@@ -57,7 +58,7 @@ export default function ReportsTab({
             </div>
             <div key={eodrSubTab} className="tab-fade">
               {eodrSubTab === 'submit' && (
-                <EODFormTab leads={leads} currentUserName={currentUserName} showSuccessModal={showSuccessModal} />
+                <EODFormTab leads={leads} currentUserName={currentUserName} showSuccessModal={showSuccessModal} toast={toast} />
               )}
               {eodrSubTab === 'status' && <EODrStatusTab leads={leads} eodEntries={eodEntries} />}
             </div>
