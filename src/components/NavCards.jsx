@@ -46,29 +46,35 @@ const ICONS = {
 
 function NavIcon({ name, color }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       {ICONS[name]}
     </svg>
   );
 }
 
-export default function NavCards({ items, active, onSelect }) {
+export default function NavCards({ items, active, onSelect, isOpen, onClose }) {
   return (
-    <div className="nav-cards">
-      {items.map((item) => {
-        const isActive = item.key === active;
-        return (
-          <button
-            key={item.key}
-            className={`nav-card ${isActive ? 'nav-card-active' : ''}`}
-            onClick={() => onSelect(item.key)}
-          >
-            <NavIcon name={item.icon} color={isActive ? '#6EFF7B' : '#69C920'} />
-            <p className="nav-card-title">{item.title}</p>
-            <p className="nav-card-desc">{item.desc}</p>
-          </button>
-        );
-      })}
-    </div>
+    <>
+      {isOpen && <div className="sidebar-backdrop" onClick={onClose} />}
+      <div className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
+        <p className="sidebar-brand">Cluster Joe</p>
+        {items.map((item) => {
+          const isActive = item.key === active;
+          return (
+            <button
+              key={item.key}
+              className={`sidebar-item ${isActive ? 'sidebar-item-active' : ''}`}
+              onClick={() => {
+                onSelect(item.key);
+                onClose();
+              }}
+            >
+              <NavIcon name={item.icon} color={isActive ? '#6EFF7B' : 'rgba(255,255,255,0.55)'} />
+              <span>{item.title}</span>
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }

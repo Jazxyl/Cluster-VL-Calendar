@@ -69,6 +69,7 @@ function AppContent({ session }) {
   const currentUserName = session?.name || '';
 
   const [nav, setNav] = useState('home');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [ptoSubTab, setPtoSubTab] = useState('calendar');
 
   const [leads, setLeads] = useState([]);
@@ -351,27 +352,40 @@ function AppContent({ session }) {
   }
 
   return (
-    <div className="wrap">
-      <div className="topbar">
-        <div>
-          <p className="brand-eyebrow">Cluster Joe</p>
-          <h1>{NAV_ITEMS.find((n) => n.key === nav)?.title || 'Home'}</h1>
-          <p className="sub">{NAV_ITEMS.find((n) => n.key === nav)?.desc || 'Your cluster, all in one place'}</p>
-        </div>
-        <div className="actions">
-          <ClockBar />
-          <button className="ghost" onClick={loadData} disabled={loading}>
-            {loading ? 'Refreshing…' : 'Refresh from sheet'}
-          </button>
-        </div>
-      </div>
+    <div className="app-shell">
+      <NavCards
+        items={NAV_ITEMS}
+        active={nav}
+        onSelect={setNav}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+      <div className="main-area">
+        <div className="wrap">
+          <div className="topbar">
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <button className="ghost mobile-menu-btn" onClick={() => setSidebarOpen(true)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <div>
+                <h1>{NAV_ITEMS.find((n) => n.key === nav)?.title || 'Home'}</h1>
+                <p className="sub">{NAV_ITEMS.find((n) => n.key === nav)?.desc || 'Your cluster, all in one place'}</p>
+              </div>
+            </div>
+            <div className="actions">
+              <ClockBar />
+              <button className="ghost" onClick={loadData} disabled={loading}>
+                {loading ? 'Refreshing…' : 'Refresh from sheet'}
+              </button>
+            </div>
+          </div>
 
-      {!WEBHOOK_URL && <SetupNotice missing="webhook" />}
-      {error && <div className="card" style={{ padding: 14, marginBottom: 16, color: '#8a2f24' }}>{error}</div>}
+          {!WEBHOOK_URL && <SetupNotice missing="webhook" />}
+          {error && <div className="card" style={{ padding: 14, marginBottom: 16, color: '#8a2f24' }}>{error}</div>}
 
-      <NavCards items={NAV_ITEMS} active={nav} onSelect={setNav} />
-
-      <div key={nav} className="tab-fade">
+          <div key={nav} className="tab-fade">
         {nav === 'home' && (
           <HomeTab
             announcements={announcements}
@@ -470,9 +484,11 @@ function AppContent({ session }) {
           />
         )}
         {nav === 'profiles' && <ProfilesTab leads={leads} userEmails={userEmails} birthdays={birthdays} />}
-      </div>
+          </div>
 
-      <div className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>
+          <div className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>
+        </div>
+      </div>
     </div>
   );
 }
