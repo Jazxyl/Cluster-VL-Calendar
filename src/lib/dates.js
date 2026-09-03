@@ -80,6 +80,14 @@ export function parseUSDate(input) {
   const raw = (input || '').trim();
   if (!raw) return '';
 
+  // "YYYY-M-DD" or "YYYY-MM-DD" — ISO-style, year always comes first with
+  // 4 digits, so this is unambiguous and checked before the other formats.
+  const isoStyle = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (isoStyle) {
+    const [, yyyy, mm, dd] = isoStyle;
+    return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+  }
+
   const numeric = raw.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2}|\d{4})$/);
   if (numeric) {
     const [, mm, dd, yyyy] = numeric;
