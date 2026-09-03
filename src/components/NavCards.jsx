@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { formatBirthdayDate } from '../lib/dates.js';
 
 const ICONS = {
   home: (
@@ -62,74 +61,35 @@ function initials(fullName) {
   return (first + last).toUpperCase();
 }
 
-function UserMenu({ session, currentLead, currentEmail, currentBirthday, rosterAgents, onSignOut }) {
+function UserMenu({ session, currentLead, onGoToProfile, onGoToRoster, onSignOut }) {
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState(null); // null | 'profile' | 'roster'
   const [imgFailed, setImgFailed] = useState(false);
 
   const displayName = currentLead?.name || session?.name || 'Account';
   const showPhoto = currentLead?.photoLink && !imgFailed;
 
-  function toggleMenu() {
-    setOpen((o) => {
-      if (o) setView(null);
-      return !o;
-    });
+  function handleOption(action) {
+    setOpen(false);
+    action();
   }
 
   return (
     <div className="sidebar-usermenu">
       {open && (
         <div className="sidebar-user-panel">
-          {view === null && (
-            <>
-              <button className="sidebar-user-option" onClick={() => setView('profile')}>
-                Profile
-              </button>
-              <button className="sidebar-user-option" onClick={() => setView('roster')}>
-                Roster
-              </button>
-              <button className="sidebar-user-option sidebar-user-option-danger" onClick={onSignOut}>
-                Sign out
-              </button>
-            </>
-          )}
-          {view === 'profile' && (
-            <div>
-              <button className="sidebar-user-back" onClick={() => setView(null)}>
-                ← Back
-              </button>
-              <div className="sidebar-user-detail">
-                <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--navy)' }}>{displayName}</p>
-                <p style={{ margin: '0 0 2px' }}>{currentEmail || 'No email on file'}</p>
-                <p style={{ margin: 0 }}>
-                  {currentBirthday ? formatBirthdayDate(currentBirthday.date) : 'No birthday on file'}
-                </p>
-              </div>
-            </div>
-          )}
-          {view === 'roster' && (
-            <div>
-              <button className="sidebar-user-back" onClick={() => setView(null)}>
-                ← Back
-              </button>
-              <div className="sidebar-user-detail">
-                {rosterAgents.length === 0 ? (
-                  <p style={{ margin: 0 }}>No agents on file.</p>
-                ) : (
-                  rosterAgents.map((name, i) => (
-                    <p key={i} style={{ margin: '0 0 2px' }}>
-                      {name}
-                    </p>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+          <button className="sidebar-user-option" onClick={() => handleOption(onGoToProfile)}>
+            Profile
+          </button>
+          <button className="sidebar-user-option" onClick={() => handleOption(onGoToRoster)}>
+            Roster
+          </button>
+          <button className="sidebar-user-option sidebar-user-option-danger" onClick={() => handleOption(onSignOut)}>
+            Sign out
+          </button>
         </div>
       )}
 
-      <button className="sidebar-user-trigger" onClick={toggleMenu}>
+      <button className="sidebar-user-trigger" onClick={() => setOpen((o) => !o)}>
         {showPhoto ? (
           <img
             src={currentLead.photoLink}
@@ -159,9 +119,8 @@ export default function NavCards({
   onClose,
   session,
   currentLead,
-  currentEmail,
-  currentBirthday,
-  rosterAgents,
+  onGoToProfile,
+  onGoToRoster,
   onSignOut,
 }) {
   return (
@@ -189,9 +148,8 @@ export default function NavCards({
         <UserMenu
           session={session}
           currentLead={currentLead}
-          currentEmail={currentEmail}
-          currentBirthday={currentBirthday}
-          rosterAgents={rosterAgents || []}
+          onGoToProfile={onGoToProfile}
+          onGoToRoster={onGoToRoster}
           onSignOut={onSignOut}
         />
       </div>

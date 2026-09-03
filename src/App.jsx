@@ -41,6 +41,8 @@ import TownHallNominationsTab from './components/TownHallNominationsTab.jsx';
 import CoachingComplianceTab from './components/CoachingComplianceTab.jsx';
 import ExpansionBonusTab from './components/ExpansionBonusTab.jsx';
 import ProfilesTab from './components/ProfilesTab.jsx';
+import MyProfilePage from './components/MyProfilePage.jsx';
+import MyRosterPage from './components/MyRosterPage.jsx';
 import SetupNotice from './components/SetupNotice.jsx';
 import LoginGate from './components/LoginGate.jsx';
 import ClockBar from './components/ClockBar.jsx';
@@ -141,7 +143,12 @@ function AppContent({ session, onSignOut }) {
         setAprs(
           rows
             .filter((r) => r.Name && r.Date)
-            .map((r) => ({ name: r.Name.trim(), date: parseUSDate(r.Date.trim()), tl: (r.TL || '').trim() }))
+            .map((r) => ({
+              name: r.Name.trim(),
+              date: parseUSDate(r.Date.trim()),
+              tl: (r.TL || '').trim(),
+              hubstaffId: r['Hubstaff ID'] || '',
+            }))
             .filter((a) => a.date)
         );
       }),
@@ -268,13 +275,12 @@ function AppContent({ session, onSignOut }) {
   const currentEmail = userEmails[(currentUserName || '').toLowerCase()] || '';
   const currentBirthday =
     birthdays.find((b) => b.name.toLowerCase().trim() === currentUserFullNameAll.toLowerCase().trim()) || null;
-  const rosterAgents = [
-    ...new Set(
-      aprs
-        .filter((a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim())
-        .map((a) => a.name)
-    ),
-  ];
+  const rosterAgentsRaw = aprs.filter(
+    (a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim()
+  );
+  const rosterAgents = Array.from(
+    new Map(rosterAgentsRaw.map((a) => [a.name.toLowerCase().trim(), a])).values()
+  );
 
   async function submitFiling({ leadName, start, end, reason }) {
     const todayStr = todayPST();
@@ -376,9 +382,8 @@ function AppContent({ session, onSignOut }) {
         onClose={() => setSidebarOpen(false)}
         session={session}
         currentLead={currentLead}
-        currentEmail={currentEmail}
-        currentBirthday={currentBirthday}
-        rosterAgents={rosterAgents}
+        onGoToProfile={() => setNav('myprofile')}
+        onGoToRoster={() => setNav('myroster')}
         onSignOut={onSignOut}
       />
       <div className="main-area">
@@ -391,8 +396,20 @@ function AppContent({ session, onSignOut }) {
                 </svg>
               </button>
               <div>
-                <h1>{NAV_ITEMS.find((n) => n.key === nav)?.title || 'Home'}</h1>
-                <p className="sub">{NAV_ITEMS.find((n) => n.key === nav)?.desc || 'Your cluster, all in one place'}</p>
+                <h1>
+                  {nav === 'myprofile'
+                    ? 'Your Profile'
+                    : nav === 'myroster'
+                    ? 'Your Roster'
+                    : NAV_ITEMS.find((n) => n.key === nav)?.title || 'Home'}
+                </h1>
+                <p className="sub">
+                  {nav === 'myprofile'
+                    ? 'Your own account details'
+                    : nav === 'myroster'
+                    ? 'Agents assigned to you'
+                    : NAV_ITEMS.find((n) => n.key === nav)?.desc || 'Your cluster, all in one place'}
+                </p>
               </div>
             </div>
             <div className="actions">
@@ -505,6 +522,10 @@ function AppContent({ session, onSignOut }) {
           />
         )}
         {nav === 'profiles' && <ProfilesTab leads={leads} userEmails={userEmails} birthdays={birthdays} />}
+        {nav === 'myprofile' && (
+          <MyProfilePage lead={currentLead} email={currentEmail} birthday={currentBirthday} />
+        )}
+        {nav === 'myroster' && <MyRosterPage agents={rosterAgents} />}
           </div>
 
           <div className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>
