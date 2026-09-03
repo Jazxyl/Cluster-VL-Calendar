@@ -112,3 +112,23 @@ export function coachingCompliancePayload({ tl, agent, type, fathomLink }) {
     fathomLink,
   };
 }
+
+export function addAgentPayload({ name, tl, hubstaffId, date }) {
+  return {
+    type: 'AddAgent',
+    name,
+    tl,
+    hubstaffId,
+    date,
+  };
+}
+
+export function updateAgentStatusPayload({ name, tl, hubstaffId, status }) {
+  return {
+    type: 'UpdateAgentStatus',
+    name,
+    tl,
+    hubstaffId,
+    status,
+  };
+}

@@ -24,6 +24,59 @@ function getOrCreateSheet(ss, name, headerRow) {
   return sheet;
 }
 
+// Appends a new row using a {headerName: value} object rather than a fixed
+// column order — looks up each header's position, creating that column if
+// it doesn't exist yet (e.g. a brand new "Status" column on first use).
+function appendRowByHeaders(sheet, dataObj) {
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var newRowIndex = sheet.getLastRow() + 1;
+  Object.keys(dataObj).forEach(function (key) {
+    var colIndex = headers.indexOf(key);
+    if (colIndex === -1) {
+      colIndex = headers.length;
+      sheet.getRange(1, colIndex + 1).setValue(key);
+      headers.push(key);
+    }
+    sheet.getRange(newRowIndex, colIndex + 1).setValue(dataObj[key]);
+  });
+}
+
+// Finds every row matching ALL of matchCriteria (case-insensitive, trimmed,
+// empty criteria are skipped rather than required to match empty) and
+// updates it with the given {headerName: value} pairs — creating any target
+// column that doesn't exist yet. Never deletes or shifts rows, only writes
+// into existing ones, so there's no risk of row-index corruption.
+function findAndUpdateRow(sheet, matchCriteria, updates) {
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var data = sheet.getDataRange().getValues();
+
+  var matchCols = [];
+  Object.keys(matchCriteria).forEach(function (key) {
+    var val = String(matchCriteria[key] || '').trim().toLowerCase();
+    if (val) matchCols.push({ col: headers.indexOf(key), value: val });
+  });
+  if (matchCols.length === 0) return; // no real criteria — refuse to touch anything
+
+  for (var i = 1; i < data.length; i++) {
+    var isMatch = matchCols.every(function (m) {
+      return m.col !== -1 && String(data[i][m.col] || '').trim().toLowerCase() === m.value;
+    });
+    if (isMatch) {
+      Object.keys(updates).forEach(function (key) {
+        var colIndex = headers.indexOf(key);
+        if (colIndex === -1) {
+          colIndex = headers.length;
+          sheet.getRange(1, colIndex + 1).setValue(key);
+          headers.push(key);
+        }
+        sheet.getRange(i + 1, colIndex + 1).setValue(updates[key]);
+      });
+    }
+  }
+}
+
 function saveScreenshot(fileObj) {
   if (!fileObj || !fileObj.data) return '';
   var folder = getOrCreateFolder(EOD_SCREENSHOT_FOLDER_NAME);
@@ -184,6 +237,22 @@ function doPost(e) {
         data.coachingType || '',
         data.fathomLink || ''
       ]);
+    } else if (data.type === 'AddAgent') {
+      var aprsSheetForAdd = ss.getSheetByName('APRs');
+      appendRowByHeaders(aprsSheetForAdd, {
+        'Name': data.name || '',
+        'Date': data.date || '',
+        'TL': data.tl || '',
+        'Hubstaff ID': data.hubstaffId || '',
+        'Status': 'Active'
+      });
+    } else if (data.type === 'UpdateAgentStatus') {
+      var aprsSheetForUpdate = ss.getSheetByName('APRs');
+      findAndUpdateRow(
+        aprsSheetForUpdate,
+        { 'Name': data.name || '', 'TL': data.tl || '', 'Hubstaff ID': data.hubstaffId || '' },
+        { 'Status': data.status || 'Active' }
+      );
     }
 
     return ContentService.createTextOutput(JSON.stringify({ ok: true }))

@@ -28,6 +28,8 @@ import {
   expansionBonusPayload,
   expansionBonusCompletionPayload,
   coachingCompliancePayload,
+  addAgentPayload,
+  updateAgentStatusPayload,
 } from './lib/webhook.js';
 import { evaluateFiling, todayPST, rangesOverlap, parseUSDate } from './lib/dates.js';
 import { colorForIndex } from './lib/colors.js';
@@ -148,8 +150,10 @@ function AppContent({ session, onSignOut }) {
               date: parseUSDate(r.Date.trim()),
               tl: (r.TL || '').trim(),
               hubstaffId: r['Hubstaff ID'] || '',
+              status: (r.Status || 'Active').trim(),
             }))
             .filter((a) => a.date)
+            .filter((a) => a.status.toLowerCase() !== 'inactive')
         );
       }),
       fetchCalendarMeetings().then((calendarMeetings) => {
@@ -368,6 +372,22 @@ function AppContent({ session, onSignOut }) {
     return res;
   }
 
+  async function submitAddAgent({ name, hubstaffId, date }) {
+    const record = { name, date, tl: currentUserFullNameAll, hubstaffId, status: 'Active' };
+    setAprs((prev) => [record, ...prev]);
+    const res = await postToSheet(addAgentPayload({ name, tl: currentUserFullNameAll, hubstaffId, date }));
+    return res;
+  }
+
+  async function removeAgent({ name, tl, hubstaffId }) {
+    // Optimistically drop them from local state immediately — since aprs is
+    // filtered to Active-only at the source, this correctly removes them
+    // everywhere (Roster, APR Notifications) without touching other logic.
+    setAprs((prev) => prev.filter((a) => !(a.name === name && a.tl === tl)));
+    const res = await postToSheet(updateAgentStatusPayload({ name, tl, hubstaffId, status: 'Inactive' }));
+    return res;
+  }
+
   if (!SHEET_ID) {
     return <SetupNotice missing="sheet" />;
   }
@@ -525,7 +545,9 @@ function AppContent({ session, onSignOut }) {
         {nav === 'myprofile' && (
           <MyProfilePage lead={currentLead} email={currentEmail} birthday={currentBirthday} />
         )}
-        {nav === 'myroster' && <MyRosterPage agents={rosterAgents} />}
+        {nav === 'myroster' && (
+          <MyRosterPage agents={rosterAgents} onAddAgent={submitAddAgent} onRemoveAgent={removeAgent} />
+        )}
           </div>
 
           <div className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>
