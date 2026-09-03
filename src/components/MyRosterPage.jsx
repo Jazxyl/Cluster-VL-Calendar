@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { formatUSDate, todayPST } from '../lib/dates.js';
 
-function AddAgentForm({ onAddAgent, onDone }) {
+function AddAgentForm({ onAddAgent, onDone, showSuccessModal }) {
   const [name, setName] = useState('');
   const [hubstaffId, setHubstaffId] = useState('');
   const [date, setDate] = useState(todayPST());
@@ -21,6 +21,7 @@ function AddAgentForm({ onAddAgent, onDone }) {
       setHubstaffId('');
       setDate(todayPST());
       onDone();
+      showSuccessModal('Agent added!');
     } else {
       setError("Couldn't reach the sheet — check the webhook URL and try again.");
     }
@@ -175,7 +176,7 @@ function AgentRow({ agent, onRemoveAgent, onEditAgent }) {
   );
 }
 
-export default function MyRosterPage({ agents, onAddAgent, onRemoveAgent, onEditAgent }) {
+export default function MyRosterPage({ agents, onAddAgent, onRemoveAgent, onEditAgent, showSuccessModal }) {
   const [showAddForm, setShowAddForm] = useState(false);
 
   return (
@@ -191,7 +192,9 @@ export default function MyRosterPage({ agents, onAddAgent, onRemoveAgent, onEdit
         )}
       </div>
 
-      {showAddForm && <AddAgentForm onAddAgent={onAddAgent} onDone={() => setShowAddForm(false)} />}
+      {showAddForm && (
+        <AddAgentForm onAddAgent={onAddAgent} onDone={() => setShowAddForm(false)} showSuccessModal={showSuccessModal} />
+      )}
 
       {agents.length === 0 ? (
         <p className="empty-note">No agents assigned to you yet.</p>

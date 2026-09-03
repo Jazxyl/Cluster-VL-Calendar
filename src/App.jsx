@@ -46,6 +46,7 @@ import ExpansionBonusTab from './components/ExpansionBonusTab.jsx';
 import ProfilesTab from './components/ProfilesTab.jsx';
 import MyProfilePage from './components/MyProfilePage.jsx';
 import MyRosterPage from './components/MyRosterPage.jsx';
+import SuccessModal from './components/SuccessModal.jsx';
 import SetupNotice from './components/SetupNotice.jsx';
 import LoginGate from './components/LoginGate.jsx';
 import ClockBar from './components/ClockBar.jsx';
@@ -97,11 +98,21 @@ function AppContent({ session, onSignOut }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const toast = useCallback((msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 2500);
   }, []);
+
+  const showSuccessModal = useCallback((msg) => {
+    setSuccessMessage(msg);
+  }, []);
+
+  function handleSuccessConfirm() {
+    setSuccessMessage('');
+    loadData();
+  }
 
   const loadData = useCallback(async () => {
     if (!SHEET_ID) {
@@ -503,6 +514,7 @@ function AppContent({ session, onSignOut }) {
             isAdmin={isAdmin}
             currentUserName={currentUserName}
             onSubmitEowr={submitEowr}
+            showSuccessModal={showSuccessModal}
           />
         )}
         {nav === 'apr' && (
@@ -521,6 +533,7 @@ function AppContent({ session, onSignOut }) {
             isAdmin={isAdmin}
             currentUserName={currentUserName}
             onSubmit={submitNomination}
+            showSuccessModal={showSuccessModal}
           />
         )}
         {nav === 'coaching' && (
@@ -530,6 +543,7 @@ function AppContent({ session, onSignOut }) {
             isAdmin={isAdmin}
             currentUserName={currentUserName}
             onSubmit={submitCoaching}
+            showSuccessModal={showSuccessModal}
           />
         )}
         {nav === 'expansionbonus' && (
@@ -541,6 +555,7 @@ function AppContent({ session, onSignOut }) {
             currentUserName={currentUserName}
             onSubmit={submitExpansionBonus}
             onProcess={processExpansionBonus}
+            showSuccessModal={showSuccessModal}
           />
         )}
         {nav === 'profiles' && <ProfilesTab leads={leads} userEmails={userEmails} birthdays={birthdays} />}
@@ -553,11 +568,13 @@ function AppContent({ session, onSignOut }) {
             onAddAgent={submitAddAgent}
             onRemoveAgent={removeAgent}
             onEditAgent={editAgent}
+            showSuccessModal={showSuccessModal}
           />
         )}
           </div>
 
           <div className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>
+          <SuccessModal message={successMessage} onConfirm={handleSuccessConfirm} />
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { recentWeekStarts, formatWeekLabel, lastWeekStart } from '../lib/dates.js';
 
-export default function EOWrSubmitTab({ currentUserName, leads, onSubmit }) {
+export default function EOWrSubmitTab({ currentUserName, leads, onSubmit, showSuccessModal }) {
   const weeks = recentWeekStarts();
   const [weekStart, setWeekStart] = useState(lastWeekStart());
   const [leadName, setLeadName] = useState(currentUserName || leads[0]?.name || '');
@@ -18,7 +18,7 @@ export default function EOWrSubmitTab({ currentUserName, leads, onSubmit }) {
     setResult(null);
     const res = await onSubmit({ tl: leadName, weekStart, sheetLink: sheetLink.trim() });
     if (res.ok) {
-      setResult({ ok: true, message: '✅ EOWr submitted!' });
+      showSuccessModal('EOWr submitted!');
       setSheetLink('');
     } else {
       setResult({ ok: false, message: "Couldn't reach the sheet — check the webhook URL and try again." });

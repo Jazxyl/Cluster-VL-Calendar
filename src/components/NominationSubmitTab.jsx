@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { todayPST, isNominationWindowOpen, currentMonthKey } from '../lib/dates.js';
 
-export default function NominationSubmitTab({ leads, currentUserName, nominations, onSubmit }) {
+export default function NominationSubmitTab({ leads, currentUserName, nominations, onSubmit, showSuccessModal }) {
   const todayStr = todayPST();
   const windowOpen = isNominationWindowOpen(todayStr);
   const thisMonth = currentMonthKey(todayStr);
@@ -50,7 +50,7 @@ export default function NominationSubmitTab({ leads, currentUserName, nomination
       recordingLink: recordingLink.trim(),
     });
     if (res.ok) {
-      setResult({ ok: true, message: '✅ Nomination submitted!' });
+      showSuccessModal('Nomination submitted!');
       setAgent('');
       setClient('');
       setReason('');

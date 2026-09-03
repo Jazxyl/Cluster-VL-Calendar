@@ -2,7 +2,7 @@ import { useState } from 'react';
 import ExpansionBonusSubmitTab from './ExpansionBonusSubmitTab.jsx';
 import ExpansionBonusStatusTab from './ExpansionBonusStatusTab.jsx';
 
-export default function ExpansionBonusTab({ leads, entries, completions, isAdmin, currentUserName, onSubmit, onProcess }) {
+export default function ExpansionBonusTab({ leads, entries, completions, isAdmin, currentUserName, onSubmit, onProcess, showSuccessModal }) {
   const [subTab, setSubTab] = useState('submit');
 
   return (
@@ -17,7 +17,12 @@ export default function ExpansionBonusTab({ leads, entries, completions, isAdmin
       </div>
       <div key={subTab} className="tab-fade">
         {subTab === 'submit' && (
-          <ExpansionBonusSubmitTab leads={leads} currentUserName={currentUserName} onSubmit={onSubmit} />
+          <ExpansionBonusSubmitTab
+            leads={leads}
+            currentUserName={currentUserName}
+            onSubmit={onSubmit}
+            showSuccessModal={showSuccessModal}
+          />
         )}
         {subTab === 'status' && (
           <ExpansionBonusStatusTab

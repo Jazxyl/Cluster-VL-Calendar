@@ -2,7 +2,7 @@ import { useState } from 'react';
 import NominationSubmitTab from './NominationSubmitTab.jsx';
 import NominationStatusTab from './NominationStatusTab.jsx';
 
-export default function TownHallNominationsTab({ leads, nominations, isAdmin, currentUserName, onSubmit }) {
+export default function TownHallNominationsTab({ leads, nominations, isAdmin, currentUserName, onSubmit, showSuccessModal }) {
   const [subTab, setSubTab] = useState('submit');
 
   return (
@@ -17,7 +17,13 @@ export default function TownHallNominationsTab({ leads, nominations, isAdmin, cu
       </div>
       <div key={subTab} className="tab-fade">
         {subTab === 'submit' && (
-          <NominationSubmitTab leads={leads} currentUserName={currentUserName} nominations={nominations} onSubmit={onSubmit} />
+          <NominationSubmitTab
+            leads={leads}
+            currentUserName={currentUserName}
+            nominations={nominations}
+            onSubmit={onSubmit}
+            showSuccessModal={showSuccessModal}
+          />
         )}
         {subTab === 'status' && <NominationStatusTab leads={leads} nominations={nominations} />}
       </div>

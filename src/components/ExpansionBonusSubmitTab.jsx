@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { todayPST } from '../lib/dates.js';
 
-export default function ExpansionBonusSubmitTab({ leads, currentUserName, onSubmit }) {
+export default function ExpansionBonusSubmitTab({ leads, currentUserName, onSubmit, showSuccessModal }) {
   const [tlName, setTlName] = useState(currentUserName || leads?.[0]?.name || '');
   const [agent, setAgent] = useState('');
   const [client, setClient] = useState('');
@@ -27,7 +27,7 @@ export default function ExpansionBonusSubmitTab({ leads, currentUserName, onSubm
       hubspotLink: hubspotLink.trim(),
     });
     if (res.ok) {
-      setResult({ ok: true, message: '✅ Submitted!' });
+      showSuccessModal('Expansion bonus submitted!');
       setAgent('');
       setClient('');
       setHubspotLink('');

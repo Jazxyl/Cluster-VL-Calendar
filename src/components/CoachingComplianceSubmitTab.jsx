@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 const COACHING_TYPES = ['KPI Coaching', 'Behavior', 'Attendance'];
 
-export default function CoachingComplianceSubmitTab({ leads, currentUserName, onSubmit }) {
+export default function CoachingComplianceSubmitTab({ leads, currentUserName, onSubmit, showSuccessModal }) {
   const [tlName, setTlName] = useState(currentUserName || leads?.[0]?.name || '');
   const [agent, setAgent] = useState('');
   const [type, setType] = useState('KPI Coaching');
@@ -19,7 +19,7 @@ export default function CoachingComplianceSubmitTab({ leads, currentUserName, on
     setResult(null);
     const res = await onSubmit({ tl: tlName, agent: agent.trim(), type, fathomLink: fathomLink.trim() });
     if (res.ok) {
-      setResult({ ok: true, message: '✅ Submitted!' });
+      showSuccessModal('Coaching session logged!');
       setAgent('');
       setType('KPI Coaching');
       setFathomLink('');

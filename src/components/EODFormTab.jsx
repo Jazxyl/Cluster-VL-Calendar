@@ -12,7 +12,7 @@ const EMPTY_FORM = {
   ticketMonitoring: '',
 };
 
-export default function EODFormTab({ leads, currentUserName }) {
+export default function EODFormTab({ leads, currentUserName, showSuccessModal }) {
   const [form, setForm] = useState(() => ({
     ...EMPTY_FORM,
     leadName: currentUserName || leads?.[0]?.name || '',
@@ -70,7 +70,7 @@ export default function EODFormTab({ leads, currentUserName }) {
       );
 
       if (res.ok) {
-        setResult({ ok: true, message: '✅ EOD submitted, nice work!' });
+        showSuccessModal('EOD submitted!');
         setForm((prev) => ({ ...EMPTY_FORM, leadName: prev.leadName }));
         setHubspotFile(null);
         setAttendanceFile(null);
