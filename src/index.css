@@ -15,7 +15,7 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; color: var(--ink); background: linear-gradient(160deg, #F8FDFD 0%, #EFF9E9 55%, #DFF3D8 100%); min-height: 100vh; }
-.wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+.wrap { padding: 28px 32px 60px; }
 
 .topbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
 .brand-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 16px; letter-spacing: .1em; text-transform: uppercase; color: var(--brand-green); margin: 0 0 4px; font-weight: 600; }
