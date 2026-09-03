@@ -16,6 +16,8 @@ export const USERS_TAB = 'Users';
 export const APR_COMPLETIONS_TAB = 'AprCompletions';
 export const EOWR_TAB = 'EOWr';
 export const NOMINATIONS_TAB = 'TownHallNominations';
+export const EXPANSION_BONUS_TAB = 'ExpansionBonus';
+export const EXPANSION_BONUS_COMPLETIONS_TAB = 'ExpansionBonusCompletions';
 
 export function csvUrlForTab(tabName) {
   if (!SHEET_ID) return null;

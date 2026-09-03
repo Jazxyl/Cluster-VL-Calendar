@@ -279,3 +279,15 @@ export function formatBirthdayDate(mmdd) {
   const monthIdx = Number(mm) - 1;
   return `${SHORT_MONTH_NAMES[monthIdx] || mm} ${Number(dd)}`;
 }
+
+// ---- Expansion Bonus maturity (one-time, non-recurring — literal date math) ----
+
+export function daysSinceDate(dateStr, todayStr = todayPST()) {
+  if (!dateStr) return null;
+  return calendarDaysBetween(dateStr, todayStr);
+}
+
+export function isExpansionBonusMature(startDate, todayStr = todayPST(), maturityDays = 30) {
+  const days = daysSinceDate(startDate, todayStr);
+  return days !== null && days >= maturityDays;
+}

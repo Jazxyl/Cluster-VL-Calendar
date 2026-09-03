@@ -1,10 +1,25 @@
-import { todayPST, formatUSDate, isAprRelevant, daysFromAprDue, isNominationReminderWindow, currentMonthKey, formatBirthdayDate } from '../lib/dates.js';
+import { todayPST, formatUSDate, isAprRelevant, daysFromAprDue, isNominationReminderWindow, currentMonthKey, formatBirthdayDate, isExpansionBonusMature } from '../lib/dates.js';
 
 function firstName(fullName) {
   return (fullName || '').trim().split(' ')[0];
 }
 
-export default function HomeTab({ announcements, birthdays, huddles, townhall, aprs, isAdmin, currentUserName, onGoToApr, nominations, onGoToNominations, currentUserFullName }) {
+export default function HomeTab({
+  announcements,
+  birthdays,
+  huddles,
+  townhall,
+  aprs,
+  isAdmin,
+  currentUserName,
+  onGoToApr,
+  nominations,
+  onGoToNominations,
+  currentUserFullName,
+  expansionBonuses,
+  expansionBonusCompletions,
+  onGoToExpansionBonus,
+}) {
   const todayStr = todayPST();
   const currentMonth = todayStr.split('-')[1];
 
@@ -28,6 +43,14 @@ export default function HomeTab({ announcements, birthdays, huddles, townhall, a
       n.month === currentMonthKey(todayStr)
   );
   const showNominationReminder = isNominationReminderWindow(todayStr) && !hasNominatedThisMonth;
+
+  const matureUnprocessedCount = isAdmin
+    ? (expansionBonuses || []).filter(
+        (e) =>
+          isExpansionBonusMature(e.startDate, todayStr) &&
+          !(expansionBonusCompletions || []).some((c) => c.originalTimestamp === e.timestamp)
+      ).length
+    : 0;
 
   return (
     <div>
@@ -59,6 +82,21 @@ export default function HomeTab({ announcements, birthdays, huddles, townhall, a
             <p className="home-banner-sub">
               You haven't submitted a nomination this month — submissions close on the 16th.
             </p>
+          </div>
+        </div>
+      )}
+
+      {matureUnprocessedCount > 0 && (
+        <div className="home-banner" onClick={onGoToExpansionBonus} style={{ cursor: 'pointer' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6EFF7B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2v20" />
+            <path d="M17 6.5c0-1.9-2.2-3.5-5-3.5s-5 1.4-5 3.5c0 2.3 2.2 3 5 3.5s5 1.2 5 3.5c0 2.1-2.2 3.5-5 3.5s-5-1.6-5-3.5" />
+          </svg>
+          <div>
+            <p className="home-banner-title">
+              {matureUnprocessedCount} expansion bonus{matureUnprocessedCount === 1 ? '' : 'es'} need processing
+            </p>
+            <p className="home-banner-sub">30+ days since start date — head to Expansion Bonus to review.</p>
           </div>
         </div>
       )}

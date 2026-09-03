@@ -77,3 +77,28 @@ export function nominationPayload({ tl, agent, client, reason, month, recordingL
     recordingLink,
   };
 }
+
+// timestamp is generated client-side (not left to Apps Script's own new Date())
+// so the client always has a stable, known ID for this exact submission —
+// needed to later match it up with a completion record when an Admin
+// processes it, since the fire-and-forget webhook never returns data back.
+export function expansionBonusPayload({ timestamp, tl, agent, client, startDate, hubspotLink }) {
+  return {
+    type: 'ExpansionBonus',
+    timestamp,
+    tl,
+    agent,
+    client,
+    startDate,
+    hubspotLink,
+  };
+}
+
+export function expansionBonusCompletionPayload({ originalTimestamp, processedBy, notes }) {
+  return {
+    type: 'ExpansionBonusCompletion',
+    originalTimestamp,
+    processedBy,
+    notes,
+  };
+}

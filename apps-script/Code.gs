@@ -157,6 +157,24 @@ function doPost(e) {
         data.month || '',
         data.recordingLink || ''
       ]);
+    } else if (data.type === 'ExpansionBonus') {
+      var ebSheet = getOrCreateSheet(ss, 'ExpansionBonus', ['Timestamp', 'TL', 'Agent', 'Client', 'StartDate', 'HubspotLink']);
+      ebSheet.appendRow([
+        data.timestamp || new Date().toISOString(),
+        data.tl || '',
+        data.agent || '',
+        data.client || '',
+        data.startDate || '',
+        data.hubspotLink || ''
+      ]);
+    } else if (data.type === 'ExpansionBonusCompletion') {
+      var ebCompletionsSheet = getOrCreateSheet(ss, 'ExpansionBonusCompletions', ['Timestamp', 'OriginalTimestamp', 'ProcessedBy', 'Notes']);
+      ebCompletionsSheet.appendRow([
+        new Date(),
+        data.originalTimestamp || '',
+        data.processedBy || '',
+        data.notes || ''
+      ]);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ ok: true }))
