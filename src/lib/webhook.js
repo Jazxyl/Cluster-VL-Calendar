@@ -132,3 +132,15 @@ export function updateAgentStatusPayload({ name, tl, hubstaffId, status }) {
     status,
   };
 }
+
+export function editAgentPayload({ originalName, tl, originalHubstaffId, newName, newHubstaffId, newDate }) {
+  return {
+    type: 'EditAgent',
+    originalName,
+    tl,
+    originalHubstaffId,
+    newName,
+    newHubstaffId,
+    newDate,
+  };
+}

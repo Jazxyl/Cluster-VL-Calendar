@@ -253,6 +253,13 @@ function doPost(e) {
         { 'Name': data.name || '', 'TL': data.tl || '', 'Hubstaff ID': data.hubstaffId || '' },
         { 'Status': data.status || 'Active' }
       );
+    } else if (data.type === 'EditAgent') {
+      var aprsSheetForEdit = ss.getSheetByName('APRs');
+      findAndUpdateRow(
+        aprsSheetForEdit,
+        { 'Name': data.originalName || '', 'TL': data.tl || '', 'Hubstaff ID': data.originalHubstaffId || '' },
+        { 'Name': data.newName || '', 'Hubstaff ID': data.newHubstaffId || '', 'Date': data.newDate || '' }
+      );
     }
 
     return ContentService.createTextOutput(JSON.stringify({ ok: true }))

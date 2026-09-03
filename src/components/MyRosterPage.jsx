@@ -68,15 +68,83 @@ function AddAgentForm({ onAddAgent }) {
   );
 }
 
-function AgentRow({ agent, onRemoveAgent }) {
+function AgentRow({ agent, onRemoveAgent, onEditAgent }) {
   const [confirming, setConfirming] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(agent.name);
+  const [editHubstaffId, setEditHubstaffId] = useState(agent.hubstaffId || '');
+  const [editDate, setEditDate] = useState(agent.date || todayPST());
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleConfirmRemove() {
     setRemoving(true);
     await onRemoveAgent({ name: agent.name, tl: agent.tl, hubstaffId: agent.hubstaffId });
-    // No need to reset state on success — the row disappears once the
-    // parent's list updates. Only reset if something goes visibly wrong.
+  }
+
+  function startEdit() {
+    setEditName(agent.name);
+    setEditHubstaffId(agent.hubstaffId || '');
+    setEditDate(agent.date || todayPST());
+    setError('');
+    setEditing(true);
+  }
+
+  async function handleSaveEdit() {
+    if (!editName.trim() || !editHubstaffId.trim() || !editDate) {
+      setError('Fill in every field first.');
+      return;
+    }
+    setError('');
+    setSaving(true);
+    const res = await onEditAgent({
+      originalName: agent.name,
+      tl: agent.tl,
+      originalHubstaffId: agent.hubstaffId,
+      newName: editName.trim(),
+      newHubstaffId: editHubstaffId.trim(),
+      newDate: editDate,
+    });
+    if (res.ok) {
+      setEditing(false);
+    } else {
+      setError("Couldn't reach the sheet — check the webhook URL and try again.");
+    }
+    setSaving(false);
+  }
+
+  if (editing) {
+    return (
+      <div style={{ padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            placeholder="Agent name"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            style={{ flex: 1, minWidth: 140 }}
+          />
+          <input
+            type="text"
+            placeholder="Hubstaff ID"
+            value={editHubstaffId}
+            onChange={(e) => setEditHubstaffId(e.target.value)}
+            style={{ width: 130 }}
+          />
+          <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} style={{ width: 150 }} />
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="primary" onClick={handleSaveEdit} disabled={saving}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          <button className="ghost" onClick={() => setEditing(false)} disabled={saving}>
+            Cancel
+          </button>
+        </div>
+        {error && <p style={{ fontSize: 11, color: '#c0392b', marginTop: 6 }}>{error}</p>}
+      </div>
+    );
   }
 
   return (
@@ -86,7 +154,7 @@ function AgentRow({ agent, onRemoveAgent }) {
       <span style={{ width: 90, fontSize: 11, fontFamily: 'JetBrains Mono, monospace', color: 'var(--ink-soft)', textAlign: 'right' }}>
         {agent.date ? formatUSDate(agent.date) : '—'}
       </span>
-      <span style={{ width: confirming ? 140 : 70, textAlign: 'right' }}>
+      <span style={{ width: confirming ? 140 : 120, textAlign: 'right' }}>
         {confirming ? (
           <span style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
             <button className="ghost" style={{ padding: '4px 8px', fontSize: 11 }} onClick={() => setConfirming(false)} disabled={removing}>
@@ -102,16 +170,21 @@ function AgentRow({ agent, onRemoveAgent }) {
             </button>
           </span>
         ) : (
-          <button className="ghost" style={{ padding: '4px 8px', fontSize: 11 }} onClick={() => setConfirming(true)}>
-            Remove
-          </button>
+          <span style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+            <button className="ghost" style={{ padding: '4px 8px', fontSize: 11 }} onClick={startEdit}>
+              Edit
+            </button>
+            <button className="ghost" style={{ padding: '4px 8px', fontSize: 11 }} onClick={() => setConfirming(true)}>
+              Remove
+            </button>
+          </span>
         )}
       </span>
     </div>
   );
 }
 
-export default function MyRosterPage({ agents, onAddAgent, onRemoveAgent }) {
+export default function MyRosterPage({ agents, onAddAgent, onRemoveAgent, onEditAgent }) {
   return (
     <div className="card home-section">
       <p className="home-section-title">Your agents ({agents.length})</p>
@@ -132,10 +205,10 @@ export default function MyRosterPage({ agents, onAddAgent, onRemoveAgent }) {
             <span style={{ width: 90, fontSize: 11, fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--ink-soft)', textAlign: 'right' }}>
               Start date
             </span>
-            <span style={{ width: 70 }} />
+            <span style={{ width: 120 }} />
           </div>
           {agents.map((a, i) => (
-            <AgentRow key={i} agent={a} onRemoveAgent={onRemoveAgent} />
+            <AgentRow key={i} agent={a} onRemoveAgent={onRemoveAgent} onEditAgent={onEditAgent} />
           ))}
         </>
       )}

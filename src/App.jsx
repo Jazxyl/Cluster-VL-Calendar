@@ -30,6 +30,7 @@ import {
   coachingCompliancePayload,
   addAgentPayload,
   updateAgentStatusPayload,
+  editAgentPayload,
 } from './lib/webhook.js';
 import { evaluateFiling, todayPST, rangesOverlap, parseUSDate } from './lib/dates.js';
 import { colorForIndex } from './lib/colors.js';
@@ -375,6 +376,20 @@ function AppContent({ session, onSignOut }) {
     return res;
   }
 
+  async function editAgent({ originalName, tl, originalHubstaffId, newName, newHubstaffId, newDate }) {
+    setAprs((prev) =>
+      prev.map((a) =>
+        a.name === originalName && a.tl === tl
+          ? { ...a, name: newName, hubstaffId: newHubstaffId, date: newDate }
+          : a
+      )
+    );
+    const res = await postToSheet(
+      editAgentPayload({ originalName, tl, originalHubstaffId, newName, newHubstaffId, newDate })
+    );
+    return res;
+  }
+
   if (!SHEET_ID) {
     return <SetupNotice missing="sheet" />;
   }
@@ -533,7 +548,12 @@ function AppContent({ session, onSignOut }) {
           <MyProfilePage lead={currentLead} email={currentEmail} birthday={currentBirthday} />
         )}
         {nav === 'myroster' && (
-          <MyRosterPage agents={rosterAgents} onAddAgent={submitAddAgent} onRemoveAgent={removeAgent} />
+          <MyRosterPage
+            agents={rosterAgents}
+            onAddAgent={submitAddAgent}
+            onRemoveAgent={removeAgent}
+            onEditAgent={editAgent}
+          />
         )}
           </div>
 
