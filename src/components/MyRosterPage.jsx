@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { formatUSDate, todayPST } from '../lib/dates.js';
 
-function AddAgentForm({ onAddAgent }) {
-  const [showForm, setShowForm] = useState(false);
+function AddAgentForm({ onAddAgent, onDone }) {
   const [name, setName] = useState('');
   const [hubstaffId, setHubstaffId] = useState('');
   const [date, setDate] = useState(todayPST());
@@ -21,19 +20,11 @@ function AddAgentForm({ onAddAgent }) {
       setName('');
       setHubstaffId('');
       setDate(todayPST());
-      setShowForm(false);
+      onDone();
     } else {
       setError("Couldn't reach the sheet — check the webhook URL and try again.");
     }
     setSubmitting(false);
-  }
-
-  if (!showForm) {
-    return (
-      <button className="ghost" onClick={() => setShowForm(true)} style={{ marginBottom: 12 }}>
-        + Add agent
-      </button>
-    );
   }
 
   return (
@@ -59,7 +50,7 @@ function AddAgentForm({ onAddAgent }) {
         <button className="primary" onClick={handleSubmit} disabled={submitting}>
           {submitting ? 'Adding…' : 'Add agent'}
         </button>
-        <button className="ghost" onClick={() => setShowForm(false)} disabled={submitting}>
+        <button className="ghost" onClick={onDone} disabled={submitting}>
           Cancel
         </button>
       </div>
@@ -185,11 +176,22 @@ function AgentRow({ agent, onRemoveAgent, onEditAgent }) {
 }
 
 export default function MyRosterPage({ agents, onAddAgent, onRemoveAgent, onEditAgent }) {
+  const [showAddForm, setShowAddForm] = useState(false);
+
   return (
     <div className="card home-section">
-      <p className="home-section-title">Your agents ({agents.length})</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showAddForm ? 12 : 0 }}>
+        <p className="home-section-title" style={{ margin: 0 }}>
+          Your agents ({agents.length})
+        </p>
+        {!showAddForm && (
+          <button className="ghost" onClick={() => setShowAddForm(true)}>
+            + Add agent
+          </button>
+        )}
+      </div>
 
-      <AddAgentForm onAddAgent={onAddAgent} />
+      {showAddForm && <AddAgentForm onAddAgent={onAddAgent} onDone={() => setShowAddForm(false)} />}
 
       {agents.length === 0 ? (
         <p className="empty-note">No agents assigned to you yet.</p>
