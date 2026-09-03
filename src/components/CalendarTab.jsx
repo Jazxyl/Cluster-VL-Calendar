@@ -11,6 +11,49 @@ function entriesForDate(entries, dateStr) {
   return entries.filter((e) => dateStr >= e.start && dateStr <= e.end);
 }
 
+function initials(fullName) {
+  const parts = (fullName || '').trim().split(' ');
+  const first = parts[0]?.[0] || '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase();
+}
+
+function LeadAvatar({ lead, size = 20 }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const showPhoto = lead?.photoLink && !imgFailed;
+
+  if (showPhoto) {
+    return (
+      <img
+        src={lead.photoLink}
+        alt={lead.name}
+        onError={() => setImgFailed(true)}
+        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, display: 'block' }}
+      />
+    );
+  }
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: lead?.color || '#69C920',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'Space Grotesk, sans-serif',
+        fontWeight: 700,
+        fontSize: size * 0.4,
+        flexShrink: 0,
+      }}
+    >
+      {initials(lead?.name)}
+    </div>
+  );
+}
+
 export default function CalendarTab({ leads, entries }) {
   const [cursor, setCursor] = useState(() => {
     const d = todayPSTDateObj();
@@ -51,7 +94,7 @@ export default function CalendarTab({ leads, entries }) {
         ) : (
           leads.map((l) => (
             <div className="lead-row" key={l.id}>
-              <span className="swatch" style={{ background: l.color }} />
+              <LeadAvatar lead={l} size={20} />
               <span className="name">{l.name}</span>
             </div>
           ))
@@ -139,7 +182,7 @@ function DayDetail({ date, dayEntries, leads }) {
           const lead = leads.find((l) => l.name === e.leadName);
           return (
             <div className="entry-chip" key={i}>
-              <span className="swatch" style={{ background: lead ? lead.color : '#ccc' }} />
+              <LeadAvatar lead={lead || { name: e.leadName }} size={18} />
               <span>
                 {e.leadName}
                 {e.reason ? ` — ${e.reason}` : ''}
