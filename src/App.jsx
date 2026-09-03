@@ -257,28 +257,15 @@ function AppContent({ session, onSignOut }) {
   }, [loadData]);
 
   const entries = filings.filter((f) => f.approved);
-  const reportableLeads = leads.filter((l) => {
-    const firstNameOfLead = l.name.trim().split(' ')[0].toLowerCase();
-    return !adminNames.has(firstNameOfLead);
-  });
-  // The Users sheet stores short first names, but the dropdowns need the
-  // full name from TeamLeads to actually match an option — resolve once here.
-  const currentUserFullName =
-    reportableLeads.find((l) => l.name.trim().split(' ')[0].toLowerCase() === (currentUserName || '').toLowerCase())
-      ?.name || '';
-  // Same resolution but against the FULL leads list (including admins), for
-  // File a VL — admins take PTO too, unlike Reports which they're exempt from.
-  const currentUserFullNameAll =
-    leads.find((l) => l.name.trim().split(' ')[0].toLowerCase() === (currentUserName || '').toLowerCase())?.name ||
-    '';
+  // Now that Users.Name is the full name (matching TeamLeads.Name exactly),
+  // no short-to-full resolution is needed anywhere — currentUserName IS the
+  // full name already, and every match against it is a direct exact match.
+  const reportableLeads = leads.filter((l) => !adminNames.has(l.name.toLowerCase()));
 
-  // Data for the sidebar user menu: the person's own lead record (photo,
-  // color), email, birthday, and the roster of agents assigned to them
-  // (matched via APRs.TL, which uses short names).
-  const currentLead = leads.find((l) => l.name === currentUserFullNameAll) || null;
+  const currentLead = leads.find((l) => l.name.toLowerCase() === (currentUserName || '').toLowerCase()) || null;
   const currentEmail = userEmails[(currentUserName || '').toLowerCase()] || '';
   const currentBirthday =
-    birthdays.find((b) => b.name.toLowerCase().trim() === currentUserFullNameAll.toLowerCase().trim()) || null;
+    birthdays.find((b) => b.name.toLowerCase().trim() === (currentUserName || '').toLowerCase().trim()) || null;
   const rosterAgentsRaw = aprs.filter(
     (a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim()
   );
@@ -358,7 +345,7 @@ function AppContent({ session, onSignOut }) {
   }
 
   function processExpansionBonus({ originalTimestamp, notes }) {
-    const record = { originalTimestamp, processedBy: currentUserFullNameAll || currentUserName, notes };
+    const record = { originalTimestamp, processedBy: currentUserName, notes };
     setExpansionBonusCompletions((prev) => [record, ...prev]);
     postToSheet(expansionBonusCompletionPayload(record)).then((res) => {
       if (!res.ok) toast('Marked locally, but the sheet write failed — check the webhook URL');
@@ -373,9 +360,9 @@ function AppContent({ session, onSignOut }) {
   }
 
   async function submitAddAgent({ name, hubstaffId, date }) {
-    const record = { name, date, tl: currentUserFullNameAll, hubstaffId, status: 'Active' };
+    const record = { name, date, tl: currentUserName, hubstaffId, status: 'Active' };
     setAprs((prev) => [record, ...prev]);
-    const res = await postToSheet(addAgentPayload({ name, tl: currentUserFullNameAll, hubstaffId, date }));
+    const res = await postToSheet(addAgentPayload({ name, tl: currentUserName, hubstaffId, date }));
     return res;
   }
 
@@ -456,7 +443,7 @@ function AppContent({ session, onSignOut }) {
             onGoToApr={() => setNav('apr')}
             nominations={nominations}
             onGoToNominations={() => setNav('nominations')}
-            currentUserFullName={currentUserFullNameAll}
+            currentUserFullName={currentUserName}
             expansionBonuses={expansionBonuses}
             expansionBonusCompletions={expansionBonusCompletions}
             onGoToExpansionBonus={() => setNav('expansionbonus')}
@@ -486,7 +473,7 @@ function AppContent({ session, onSignOut }) {
                   leads={leads}
                   filings={filings}
                   onSubmit={submitFiling}
-                  currentUserName={currentUserFullNameAll}
+                  currentUserName={currentUserName}
                 />
               )}
             </div>
@@ -499,7 +486,7 @@ function AppContent({ session, onSignOut }) {
             eodEntries={eodEntries}
             eowrEntries={eowrEntries}
             isAdmin={isAdmin}
-            currentUserName={currentUserFullName}
+            currentUserName={currentUserName}
             onSubmitEowr={submitEowr}
           />
         )}
@@ -517,7 +504,7 @@ function AppContent({ session, onSignOut }) {
             leads={leads}
             nominations={nominations}
             isAdmin={isAdmin}
-            currentUserName={currentUserFullNameAll}
+            currentUserName={currentUserName}
             onSubmit={submitNomination}
           />
         )}
@@ -526,7 +513,7 @@ function AppContent({ session, onSignOut }) {
             leads={leads}
             entries={coachingEntries}
             isAdmin={isAdmin}
-            currentUserName={currentUserFullNameAll}
+            currentUserName={currentUserName}
             onSubmit={submitCoaching}
           />
         )}
@@ -536,7 +523,7 @@ function AppContent({ session, onSignOut }) {
             entries={expansionBonuses}
             completions={expansionBonusCompletions}
             isAdmin={isAdmin}
-            currentUserName={currentUserFullNameAll}
+            currentUserName={currentUserName}
             onSubmit={submitExpansionBonus}
             onProcess={processExpansionBonus}
           />
