@@ -102,3 +102,13 @@ export function expansionBonusCompletionPayload({ originalTimestamp, processedBy
     notes,
   };
 }
+
+export function coachingCompliancePayload({ tl, agent, type, fathomLink }) {
+  return {
+    type: 'CoachingCompliance',
+    tl,
+    agent,
+    coachingType: type,
+    fathomLink,
+  };
+}

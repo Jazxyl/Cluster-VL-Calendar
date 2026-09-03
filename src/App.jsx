@@ -13,6 +13,7 @@ import {
   NOMINATIONS_TAB,
   EXPANSION_BONUS_TAB,
   EXPANSION_BONUS_COMPLETIONS_TAB,
+  COACHING_COMPLIANCE_TAB,
   SHEET_ID,
   WEBHOOK_URL,
 } from './config.js';
@@ -26,6 +27,7 @@ import {
   nominationPayload,
   expansionBonusPayload,
   expansionBonusCompletionPayload,
+  coachingCompliancePayload,
 } from './lib/webhook.js';
 import { evaluateFiling, todayPST, rangesOverlap, parseUSDate } from './lib/dates.js';
 import { colorForIndex } from './lib/colors.js';
@@ -36,6 +38,7 @@ import FileVLTab from './components/FileVLTab.jsx';
 import ReportsTab from './components/ReportsTab.jsx';
 import APRTab from './components/APRTab.jsx';
 import TownHallNominationsTab from './components/TownHallNominationsTab.jsx';
+import CoachingComplianceTab from './components/CoachingComplianceTab.jsx';
 import ExpansionBonusTab from './components/ExpansionBonusTab.jsx';
 import ProfilesTab from './components/ProfilesTab.jsx';
 import SetupNotice from './components/SetupNotice.jsx';
@@ -48,6 +51,7 @@ const NAV_ITEMS = [
   { key: 'reports', title: 'Reports', desc: 'EODr and EOWr submissions', icon: 'form' },
   { key: 'apr', title: 'APR Notifications', desc: 'Upcoming reviews', icon: 'bell' },
   { key: 'nominations', title: 'Town Hall Nominations', desc: 'Recognize your agents', icon: 'star' },
+  { key: 'coaching', title: 'Coaching Compliance', desc: 'Log coaching sessions', icon: 'coaching' },
   { key: 'expansionbonus', title: 'Expansion Bonus', desc: 'Track and process bonuses', icon: 'dollar' },
   { key: 'profiles', title: 'Profiles', desc: 'Meet the team', icon: 'profile' },
 ];
@@ -82,6 +86,7 @@ function AppContent({ session }) {
   const [userEmails, setUserEmails] = useState({});
   const [expansionBonuses, setExpansionBonuses] = useState([]);
   const [expansionBonusCompletions, setExpansionBonusCompletions] = useState([]);
+  const [coachingEntries, setCoachingEntries] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -212,6 +217,19 @@ function AppContent({ session }) {
             }))
         );
       }),
+      safeFetchTab(COACHING_COMPLIANCE_TAB, 'Timestamp').then((rows) => {
+        setCoachingEntries(
+          rows
+            .filter((r) => r.TL && r.Agent)
+            .map((r) => ({
+              timestamp: r.Timestamp || '',
+              tl: r.TL.trim(),
+              agent: r.Agent.trim(),
+              type: r.Type || '',
+              fathomLink: r.FathomLink || '',
+            }))
+        );
+      }),
     ];
 
     try {
@@ -321,6 +339,13 @@ function AppContent({ session }) {
     });
   }
 
+  async function submitCoaching({ tl, agent, type, fathomLink }) {
+    const record = { tl, agent, type, fathomLink };
+    setCoachingEntries((prev) => [record, ...prev]);
+    const res = await postToSheet(coachingCompliancePayload(record));
+    return res;
+  }
+
   if (!SHEET_ID) {
     return <SetupNotice missing="sheet" />;
   }
@@ -422,6 +447,15 @@ function AppContent({ session }) {
             isAdmin={isAdmin}
             currentUserName={currentUserFullNameAll}
             onSubmit={submitNomination}
+          />
+        )}
+        {nav === 'coaching' && (
+          <CoachingComplianceTab
+            leads={leads}
+            entries={coachingEntries}
+            isAdmin={isAdmin}
+            currentUserName={currentUserFullNameAll}
+            onSubmit={submitCoaching}
           />
         )}
         {nav === 'expansionbonus' && (

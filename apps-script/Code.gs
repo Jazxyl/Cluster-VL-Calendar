@@ -175,6 +175,15 @@ function doPost(e) {
         data.processedBy || '',
         data.notes || ''
       ]);
+    } else if (data.type === 'CoachingCompliance') {
+      var coachingSheet = getOrCreateSheet(ss, 'CoachingCompliance', ['Timestamp', 'TL', 'Agent', 'Type', 'FathomLink']);
+      coachingSheet.appendRow([
+        new Date(),
+        data.tl || '',
+        data.agent || '',
+        data.coachingType || '',
+        data.fathomLink || ''
+      ]);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ ok: true }))

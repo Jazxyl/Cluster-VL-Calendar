@@ -36,6 +36,12 @@ const ICONS = {
       <path d="M17 6.5c0-1.9-2.2-3.5-5-3.5s-5 1.4-5 3.5c0 2.3 2.2 3 5 3.5s5 1.2 5 3.5c0 2.1-2.2 3.5-5 3.5s-5-1.6-5-3.5" />
     </>
   ),
+  coaching: (
+    <>
+      <path d="M4 4h16v12H8l-4 4V4z" />
+      <path d="M8 9h8M8 12h5" />
+    </>
+  ),
 };
 
 function NavIcon({ name, color }) {
