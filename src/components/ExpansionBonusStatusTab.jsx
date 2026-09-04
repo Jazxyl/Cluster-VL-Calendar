@@ -53,23 +53,23 @@ function ProcessRow({ entry, onProcess }) {
 export default function ExpansionBonusStatusTab({ entries, completions, isAdmin, currentUserName, onProcess }) {
   const todayStr = todayPST();
 
-  if (isAdmin) {
-    const actionable = [];
-    const settled = [];
+  const actionable = [];
+  const settled = [];
 
-    entries.forEach((e) => {
-      const completion = findCompletion(completions, e.timestamp);
-      if (completion) {
-        settled.push({ ...e, completion });
-      } else if (isExpansionBonusMature(e.startDate, todayStr)) {
-        actionable.push(e);
-      } else {
-        settled.push({ ...e, pending: true });
-      }
-    });
+  entries.forEach((e) => {
+    const completion = findCompletion(completions, e.timestamp);
+    if (completion) {
+      settled.push({ ...e, completion });
+    } else if (isExpansionBonusMature(e.startDate, todayStr)) {
+      actionable.push(e);
+    } else {
+      settled.push({ ...e, pending: true });
+    }
+  });
 
-    return (
-      <div>
+  return (
+    <div>
+      {isAdmin && (
         <div className="card home-section">
           <p className="home-section-title">Needs processing ({actionable.length})</p>
           {actionable.length === 0 ? (
@@ -78,58 +78,34 @@ export default function ExpansionBonusStatusTab({ entries, completions, isAdmin,
             actionable.map((e) => <ProcessRow key={e.timestamp} entry={e} onProcess={onProcess} />)
           )}
         </div>
-
-        <div className="card home-section" style={{ marginTop: 16 }}>
-          <p className="home-section-title">All submissions</p>
-          {settled.length === 0 ? (
-            <p className="empty-note">Nothing here yet.</p>
-          ) : (
-            settled.map((e, i) => (
-              <div className="hist-row" key={i}>
-                <span className="who">
-                  {e.agent} · {e.client}
-                  <span style={{ display: 'block', fontSize: 11, color: 'var(--ink-soft)' }}>
-                    {e.tl} · started {formatUSDate(e.startDate)}
-                    {e.completion ? ` · Approved by ${e.completion.processedBy}: ${e.completion.notes}` : ''}
-                    {e.pending ? ' · not yet due' : ''}
-                  </span>
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  const mine = entries.filter(
-    (e) => (e.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim()
-  );
-
-  return (
-    <div className="card home-section">
-      <p className="home-section-title">Your submissions</p>
-      {mine.length === 0 ? (
-        <p className="empty-note">You haven't submitted an expansion bonus yet.</p>
-      ) : (
-        mine.map((e, i) => {
-          const completion = findCompletion(completions, e.timestamp);
-          return (
-            <div className="hist-row" key={i}>
-              <span className={`badge ${completion ? 'approved' : 'rejected'}`}>
-                {completion ? 'Approved' : 'Pending'}
-              </span>
-              <span className="who">
-                {e.agent} · {e.client}
-                <span style={{ display: 'block', fontSize: 11, color: 'var(--ink-soft)' }}>
-                  started {formatUSDate(e.startDate)}
-                  {completion ? ` · ${completion.notes}` : ''}
-                </span>
-              </span>
-            </div>
-          );
-        })
       )}
+
+      <div className="card home-section" style={{ marginTop: isAdmin ? 16 : 0 }}>
+        <p className="home-section-title">All submissions</p>
+        {entries.length === 0 ? (
+          <p className="empty-note">Nothing submitted yet.</p>
+        ) : (
+          [...settled, ...(isAdmin ? [] : actionable)]
+            .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
+            .map((e, i) => {
+              const completion = findCompletion(completions, e.timestamp);
+              return (
+                <div className="hist-row" key={i}>
+                  <span className={`badge ${completion ? 'approved' : 'rejected'}`}>
+                    {completion ? 'Approved' : 'Pending'}
+                  </span>
+                  <span className="who">
+                    {e.agent} · {e.client}
+                    <span style={{ display: 'block', fontSize: 11, color: 'var(--ink-soft)' }}>
+                      {e.tl} · started {formatUSDate(e.startDate)}
+                      {completion ? ` · ${completion.processedBy}: ${completion.notes}` : ''}
+                    </span>
+                  </span>
+                </div>
+              );
+            })
+        )}
+      </div>
     </div>
   );
 }
