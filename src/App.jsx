@@ -504,11 +504,22 @@ function AppContent({ session, onSignOut }) {
               </button>
               <div>
                 <h1>
-                  {nav === 'myprofile'
-                    ? 'Your Profile'
-                    : nav === 'myroster'
-                    ? 'Your Roster'
-                    : NAV_ITEMS.find((n) => n.key === nav)?.title || 'Home'}
+                  {nav === 'myprofile' ? (
+                    'Your Profile'
+                  ) : nav === 'myroster' ? (
+                    'Your Roster'
+                  ) : nav === 'coaching' ? (
+                    <a
+                      href="https://talentpopapp.com/performance-monitoring-form"
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: 'inherit', textDecoration: 'none' }}
+                    >
+                      {NAV_ITEMS.find((n) => n.key === nav)?.title}
+                    </a>
+                  ) : (
+                    NAV_ITEMS.find((n) => n.key === nav)?.title || 'Home'
+                  )}
                 </h1>
                 <p className="sub">
                   {nav === 'myprofile'
