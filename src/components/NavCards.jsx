@@ -50,6 +50,13 @@ const ICONS = {
       <path d="M8 8h8M8 12h8M8 16h5" />
     </>
   ),
+  link: (
+    <>
+      <path d="M9 15L15 9" />
+      <path d="M10.5 6l1-1a4 4 0 0 1 5.5 5.5l-1 1" />
+      <path d="M13.5 18l-1 1a4 4 0 0 1-5.5-5.5l1-1" />
+    </>
+  ),
 };
 
 function NavIcon({ name, color }) {

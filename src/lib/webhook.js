@@ -161,3 +161,12 @@ export function confirmMemoPayload({ tl, memoTitle }) {
     memoTitle,
   };
 }
+
+export function addLinkPayload({ name, url, description }) {
+  return {
+    type: 'AddLink',
+    name,
+    url,
+    description,
+  };
+}

@@ -275,6 +275,14 @@ function doPost(e) {
         data.tl || '',
         data.memoTitle || ''
       ]);
+    } else if (data.type === 'AddLink') {
+      var linksSheet = getOrCreateSheet(ss, 'ClusterLinks', ['Timestamp', 'Name', 'URL', 'Description']);
+      linksSheet.appendRow([
+        new Date(),
+        data.name || '',
+        data.url || '',
+        data.description || ''
+      ]);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ ok: true }))

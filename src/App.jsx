@@ -16,6 +16,7 @@ import {
   COACHING_COMPLIANCE_TAB,
   EMEMOS_TAB,
   EMEMO_CONFIRMATIONS_TAB,
+  CLUSTER_LINKS_TAB,
   SHEET_ID,
   WEBHOOK_URL,
 } from './config.js';
@@ -35,6 +36,7 @@ import {
   editAgentPayload,
   addMemoPayload,
   confirmMemoPayload,
+  addLinkPayload,
 } from './lib/webhook.js';
 import { evaluateFiling, todayPST, rangesOverlap, parseUSDate } from './lib/dates.js';
 import { colorForIndex } from './lib/colors.js';
@@ -48,6 +50,7 @@ import TownHallNominationsTab from './components/TownHallNominationsTab.jsx';
 import CoachingComplianceTab from './components/CoachingComplianceTab.jsx';
 import ExpansionBonusTab from './components/ExpansionBonusTab.jsx';
 import EMemoTab from './components/EMemoTab.jsx';
+import ClusterLinksTab from './components/ClusterLinksTab.jsx';
 import ProfilesTab from './components/ProfilesTab.jsx';
 import MyProfilePage from './components/MyProfilePage.jsx';
 import MyRosterPage from './components/MyRosterPage.jsx';
@@ -65,6 +68,7 @@ const NAV_ITEMS = [
   { key: 'apr', title: 'APR Notifications', desc: 'Upcoming reviews', icon: 'bell' },
   { key: 'expansionbonus', title: 'Expansion Bonus', desc: 'Track and process bonuses', icon: 'dollar' },
   { key: 'ememos', title: 'E-Memo Confirmation', desc: 'Confirm company memos', icon: 'memo' },
+  { key: 'clusterlinks', title: 'Cluster Links', desc: 'Find the links you need', icon: 'link' },
   { key: 'profiles', title: 'Profiles', desc: 'Meet the team', icon: 'profile' },
 ];
 
@@ -102,6 +106,7 @@ function AppContent({ session, onSignOut }) {
   const [coachingEntries, setCoachingEntries] = useState([]);
   const [memos, setMemos] = useState([]);
   const [memoConfirmations, setMemoConfirmations] = useState([]);
+  const [clusterLinks, setClusterLinks] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -280,6 +285,13 @@ function AppContent({ session, onSignOut }) {
             .map((r) => ({ tl: r.TL.trim(), memoTitle: r.MemoTitle.trim() }))
         );
       }),
+      safeFetchTab(CLUSTER_LINKS_TAB, 'Timestamp').then((rows) => {
+        setClusterLinks(
+          rows
+            .filter((r) => r.Name && r.URL)
+            .map((r) => ({ name: r.Name.trim(), url: r.URL.trim(), description: r.Description || '' }))
+        );
+      }),
     ];
 
     try {
@@ -420,6 +432,15 @@ function AppContent({ session, onSignOut }) {
     postToSheet(confirmMemoPayload(record)).then((res) => {
       if (!res.ok) toast('Confirmed locally, but the sheet write failed — check the webhook URL');
     });
+  }
+
+  function submitAddLink({ name, url, description }) {
+    const record = { name, url, description };
+    setClusterLinks((prev) => [record, ...prev]);
+    postToSheet(addLinkPayload(record)).then((res) => {
+      if (!res.ok) toast('Added locally, but the sheet write failed — check the webhook URL');
+    });
+    return { ok: true };
   }
 
   function submitAddAgent({ name, hubstaffId, date }) {
@@ -621,6 +642,14 @@ function AppContent({ session, onSignOut }) {
             currentUserName={currentUserName}
             onAddMemo={submitAddMemo}
             onConfirm={confirmMemo}
+            showSuccessModal={showSuccessModal}
+          />
+        )}
+        {nav === 'clusterlinks' && (
+          <ClusterLinksTab
+            links={clusterLinks}
+            isAdmin={isAdmin}
+            onAddLink={submitAddLink}
             showSuccessModal={showSuccessModal}
           />
         )}

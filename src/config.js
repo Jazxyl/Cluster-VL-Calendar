@@ -21,6 +21,7 @@ export const EXPANSION_BONUS_COMPLETIONS_TAB = 'ExpansionBonusCompletions';
 export const COACHING_COMPLIANCE_TAB = 'CoachingCompliance';
 export const EMEMOS_TAB = 'EMemos';
 export const EMEMO_CONFIRMATIONS_TAB = 'EMemoConfirmations';
+export const CLUSTER_LINKS_TAB = 'ClusterLinks';
 
 export function csvUrlForTab(tabName) {
   if (!SHEET_ID) return null;
