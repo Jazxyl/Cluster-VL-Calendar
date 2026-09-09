@@ -170,3 +170,15 @@ export function addLinkPayload({ name, url, description }) {
     description,
   };
 }
+
+export function editNominationPayload({ tl, month, agent, client, reason, recordingLink }) {
+  return {
+    type: 'EditNomination',
+    tl,
+    month,
+    agent,
+    client,
+    reason,
+    recordingLink,
+  };
+}

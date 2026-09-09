@@ -283,6 +283,18 @@ function doPost(e) {
         data.url || '',
         data.description || ''
       ]);
+    } else if (data.type === 'EditNomination') {
+      var nominationsSheetForEdit = ss.getSheetByName('TownHallNominations');
+      findAndUpdateRow(
+        nominationsSheetForEdit,
+        { 'TL': data.tl || '', 'Month': data.month || '' },
+        {
+          'Agent': data.agent || '',
+          'Client': data.client || '',
+          'Reason': data.reason || '',
+          'RecordingLink': data.recordingLink || ''
+        }
+      );
     }
 
     return ContentService.createTextOutput(JSON.stringify({ ok: true }))

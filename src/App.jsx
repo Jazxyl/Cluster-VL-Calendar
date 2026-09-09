@@ -37,6 +37,7 @@ import {
   addMemoPayload,
   confirmMemoPayload,
   addLinkPayload,
+  editNominationPayload,
 } from './lib/webhook.js';
 import { evaluateFiling, todayPST, rangesOverlap, parseUSDate } from './lib/dates.js';
 import { colorForIndex } from './lib/colors.js';
@@ -443,6 +444,16 @@ function AppContent({ session, onSignOut }) {
     return { ok: true };
   }
 
+  function editNomination({ tl, month, agent, client, reason, recordingLink }) {
+    setNominations((prev) =>
+      prev.map((n) => (n.tl === tl && n.month === month ? { ...n, agent, client, reason, recordingLink } : n))
+    );
+    postToSheet(editNominationPayload({ tl, month, agent, client, reason, recordingLink })).then((res) => {
+      if (!res.ok) toast('Saved locally, but the sheet write failed — check the webhook URL');
+    });
+    return { ok: true };
+  }
+
   function submitAddAgent({ name, hubstaffId, date }) {
     const record = { name, date, tl: currentUserName, hubstaffId, status: 'Active' };
     setAprs((prev) => [record, ...prev]);
@@ -619,6 +630,7 @@ function AppContent({ session, onSignOut }) {
             isAdmin={isAdmin}
             currentUserName={currentUserName}
             onSubmit={submitNomination}
+            onEditNomination={editNomination}
             showSuccessModal={showSuccessModal}
           />
         )}
