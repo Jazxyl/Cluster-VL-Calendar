@@ -260,6 +260,21 @@ function doPost(e) {
         { 'Name': data.originalName || '', 'TL': data.tl || '', 'Hubstaff ID': data.originalHubstaffId || '' },
         { 'Name': data.newName || '', 'Hubstaff ID': data.newHubstaffId || '', 'Date': data.newDate || '' }
       );
+    } else if (data.type === 'AddMemo') {
+      var memosSheet = getOrCreateSheet(ss, 'EMemos', ['Timestamp', 'Title', 'Link', 'DatePosted']);
+      memosSheet.appendRow([
+        new Date(),
+        data.title || '',
+        data.link || '',
+        data.datePosted || ''
+      ]);
+    } else if (data.type === 'ConfirmMemo') {
+      var memoConfirmationsSheet = getOrCreateSheet(ss, 'EMemoConfirmations', ['Timestamp', 'TL', 'MemoTitle']);
+      memoConfirmationsSheet.appendRow([
+        new Date(),
+        data.tl || '',
+        data.memoTitle || ''
+      ]);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ ok: true }))

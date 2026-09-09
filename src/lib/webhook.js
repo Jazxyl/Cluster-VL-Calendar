@@ -144,3 +144,20 @@ export function editAgentPayload({ originalName, tl, originalHubstaffId, newName
     newDate,
   };
 }
+
+export function addMemoPayload({ title, link, datePosted }) {
+  return {
+    type: 'AddMemo',
+    title,
+    link,
+    datePosted,
+  };
+}
+
+export function confirmMemoPayload({ tl, memoTitle }) {
+  return {
+    type: 'ConfirmMemo',
+    tl,
+    memoTitle,
+  };
+}

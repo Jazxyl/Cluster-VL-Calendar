@@ -14,6 +14,8 @@ import {
   EXPANSION_BONUS_TAB,
   EXPANSION_BONUS_COMPLETIONS_TAB,
   COACHING_COMPLIANCE_TAB,
+  EMEMOS_TAB,
+  EMEMO_CONFIRMATIONS_TAB,
   SHEET_ID,
   WEBHOOK_URL,
 } from './config.js';
@@ -31,6 +33,8 @@ import {
   addAgentPayload,
   updateAgentStatusPayload,
   editAgentPayload,
+  addMemoPayload,
+  confirmMemoPayload,
 } from './lib/webhook.js';
 import { evaluateFiling, todayPST, rangesOverlap, parseUSDate } from './lib/dates.js';
 import { colorForIndex } from './lib/colors.js';
@@ -43,6 +47,7 @@ import APRTab from './components/APRTab.jsx';
 import TownHallNominationsTab from './components/TownHallNominationsTab.jsx';
 import CoachingComplianceTab from './components/CoachingComplianceTab.jsx';
 import ExpansionBonusTab from './components/ExpansionBonusTab.jsx';
+import EMemoTab from './components/EMemoTab.jsx';
 import ProfilesTab from './components/ProfilesTab.jsx';
 import MyProfilePage from './components/MyProfilePage.jsx';
 import MyRosterPage from './components/MyRosterPage.jsx';
@@ -59,6 +64,7 @@ const NAV_ITEMS = [
   { key: 'nominations', title: 'Town Hall Nominations', desc: 'Recognize your agents', icon: 'star' },
   { key: 'apr', title: 'APR Notifications', desc: 'Upcoming reviews', icon: 'bell' },
   { key: 'expansionbonus', title: 'Expansion Bonus', desc: 'Track and process bonuses', icon: 'dollar' },
+  { key: 'ememos', title: 'E-Memo Confirmation', desc: 'Confirm company memos', icon: 'memo' },
   { key: 'profiles', title: 'Profiles', desc: 'Meet the team', icon: 'profile' },
 ];
 
@@ -94,6 +100,8 @@ function AppContent({ session, onSignOut }) {
   const [expansionBonuses, setExpansionBonuses] = useState([]);
   const [expansionBonusCompletions, setExpansionBonusCompletions] = useState([]);
   const [coachingEntries, setCoachingEntries] = useState([]);
+  const [memos, setMemos] = useState([]);
+  const [memoConfirmations, setMemoConfirmations] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -254,6 +262,24 @@ function AppContent({ session, onSignOut }) {
             }))
         );
       }),
+      safeFetchTab(EMEMOS_TAB, 'Timestamp').then((rows) => {
+        setMemos(
+          rows
+            .filter((r) => r.Title && r.Link)
+            .map((r) => ({
+              title: r.Title.trim(),
+              link: r.Link.trim(),
+              datePosted: r.DatePosted || '',
+            }))
+        );
+      }),
+      safeFetchTab(EMEMO_CONFIRMATIONS_TAB, 'Timestamp').then((rows) => {
+        setMemoConfirmations(
+          rows
+            .filter((r) => r.TL && r.MemoTitle)
+            .map((r) => ({ tl: r.TL.trim(), memoTitle: r.MemoTitle.trim() }))
+        );
+      }),
     ];
 
     try {
@@ -377,6 +403,23 @@ function AppContent({ session, onSignOut }) {
       if (!res.ok) toast('Submitted locally, but the sheet write failed — check the webhook URL');
     });
     return { ok: true };
+  }
+
+  function submitAddMemo({ title, link, datePosted }) {
+    const record = { title, link, datePosted };
+    setMemos((prev) => [record, ...prev]);
+    postToSheet(addMemoPayload(record)).then((res) => {
+      if (!res.ok) toast('Added locally, but the sheet write failed — check the webhook URL');
+    });
+    return { ok: true };
+  }
+
+  function confirmMemo({ memoTitle }) {
+    const record = { tl: currentUserName, memoTitle };
+    setMemoConfirmations((prev) => [record, ...prev]);
+    postToSheet(confirmMemoPayload(record)).then((res) => {
+      if (!res.ok) toast('Confirmed locally, but the sheet write failed — check the webhook URL');
+    });
   }
 
   function submitAddAgent({ name, hubstaffId, date }) {
@@ -566,6 +609,18 @@ function AppContent({ session, onSignOut }) {
             currentUserName={currentUserName}
             onSubmit={submitExpansionBonus}
             onProcess={processExpansionBonus}
+            showSuccessModal={showSuccessModal}
+          />
+        )}
+        {nav === 'ememos' && (
+          <EMemoTab
+            memos={memos}
+            memoConfirmations={memoConfirmations}
+            leads={leads}
+            isAdmin={isAdmin}
+            currentUserName={currentUserName}
+            onAddMemo={submitAddMemo}
+            onConfirm={confirmMemo}
             showSuccessModal={showSuccessModal}
           />
         )}
