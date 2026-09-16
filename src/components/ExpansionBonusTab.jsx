@@ -11,7 +11,7 @@ export default function ExpansionBonusTab({ leads, entries, completions, isAdmin
         <button className={`tabbtn ${subTab === 'status' ? 'active' : ''}`} onClick={() => setSubTab('status')}>Status</button>
       </div>
       <div key={subTab} className="tab-fade">
-        {subTab === 'submit' && <ExpansionBonusSubmitTab leads={leads} currentUserName={currentUserName} onSubmit={onSubmit} showSuccessModal={showSuccessModal} />}
+        {subTab === 'submit' && <ExpansionBonusSubmitTab leads={leads} entries={entries} currentUserName={currentUserName} onSubmit={onSubmit} showSuccessModal={showSuccessModal} />}
         {subTab === 'status' && <ExpansionBonusStatusTab entries={entries} completions={completions} isAdmin={isAdmin} currentUserName={currentUserName} onProcess={onProcess} />}
       </div>
     </div>

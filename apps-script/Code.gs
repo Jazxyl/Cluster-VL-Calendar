@@ -106,7 +106,7 @@ function doPost(e) {
         atFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
         attendanceUrl = atFile.getUrl();
       }
-      eodSheet.appendRow([new Date(), data.leadName || '', data.date || '', data.clientCalls || '', data.coachings || '', data.fathomLink || '', data.ticketMonitoring || '', hubspotUrl, attendanceUrl]);
+      eodSheet.appendRow([new Date(), data.lead || '', data.date || '', data.clientCalls || '', data.coachings || '', data.fathomLink || '', data.ticketMonitoring || '', hubspotUrl, attendanceUrl]);
     } else if (data.type === 'AprCompletion') {
       var aprCompletionsSheet = getOrCreateSheet(ss, 'AprCompletions', ['Timestamp', 'Name', 'TL', 'OccurrenceDate', 'HubspotLink', 'ScreenshotLink']);
       var screenshotUrl = '';

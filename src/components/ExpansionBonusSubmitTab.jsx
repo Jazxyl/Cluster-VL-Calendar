@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { todayPST } from '../lib/dates.js';
 
-export default function ExpansionBonusSubmitTab({ leads, currentUserName, onSubmit, showSuccessModal }) {
+export default function ExpansionBonusSubmitTab({ leads, entries, currentUserName, onSubmit, showSuccessModal }) {
   const [tlName, setTlName] = useState(currentUserName || leads?.[0]?.name || '');
   const [agent, setAgent] = useState('');
   const [client, setClient] = useState('');
@@ -12,6 +12,17 @@ export default function ExpansionBonusSubmitTab({ leads, currentUserName, onSubm
 
   async function handleSubmit() {
     if (!tlName || !agent.trim() || !client.trim() || !startDate || !hubspotLink.trim()) { setResult({ ok: false, message: 'Fill in every field first.' }); return; }
+
+    const alreadySubmitted = (entries || []).some(
+      (e) =>
+        e.agent.toLowerCase().trim() === agent.trim().toLowerCase() &&
+        e.client.toLowerCase().trim() === client.trim().toLowerCase()
+    );
+    if (alreadySubmitted) {
+      setResult({ ok: false, message: `An expansion bonus for ${agent.trim()} — ${client.trim()} has already been submitted.` });
+      return;
+    }
+
     setSubmitting(true);
     setResult(null);
     const timestamp = new Date().toISOString();
