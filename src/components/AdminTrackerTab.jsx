@@ -1,156 +1,70 @@
 import { useState } from 'react';
 import { todayPST, mondaysInMonth, monthLabel, formatWeekLabel } from '../lib/dates.js';
 
-function EodrCompliance({ leads, eodEntries }) {
-  const [selectedDate, setSelectedDate] = useState(todayPST());
+export default function AdminTrackerTab({ leads, eodEntries, eowrEntries }) {
+  const todayStr = todayPST();
+  const [eodrDate, setEodrDate] = useState(todayStr);
+  const [monthCursor, setMonthCursor] = useState(() => { const [y, m] = todayStr.split('-'); return { year: Number(y), month: Number(m) }; });
+  const [expandedWeek, setExpandedWeek] = useState(null);
 
-  const submittedNames = new Set(
-    eodEntries.filter((e) => e.date === selectedDate).map((e) => e.lead.toLowerCase().trim())
-  );
-  const pending = leads.filter((l) => !submittedNames.has(l.name.toLowerCase().trim()));
-  const submittedCount = leads.length - pending.length;
-  const pct = leads.length ? Math.round((submittedCount / leads.length) * 100) : 0;
-  const barColor = pct >= 90 ? '#69C920' : pct >= 60 ? '#173143' : '#000000';
+  const submittedEodr = new Set(eodEntries.filter((e) => e.date === eodrDate).map((e) => e.lead.toLowerCase().trim()));
+  const eodrPending = leads.filter((l) => !submittedEodr.has(l.name.toLowerCase().trim()));
+  const eodrPct = leads.length ? Math.round((submittedEodr.size / leads.length) * 100) : 0;
 
-  return (
-    <div className="card home-section">
-      <p className="home-section-title">EODr compliance</p>
-      <div className="field" style={{ maxWidth: 220 }}>
-        <label>Date</label>
-        <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-        <span style={{ fontWeight: 600, color: 'var(--ink)' }}>
-          {submittedCount} / {leads.length} submitted
-        </span>
-        <span style={{ color: 'var(--ink-soft)' }}>{pct}%</span>
-      </div>
-      <div style={{ height: 5, background: '#e2e5ee', borderRadius: 3, overflow: 'hidden', marginBottom: 12 }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: barColor }} />
-      </div>
-      <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-soft)', margin: '0 0 6px' }}>
-        Pending ({pending.length})
-      </p>
-      {pending.length === 0 ? (
-        <p className="empty-note">Everyone's submitted.</p>
-      ) : (
-        <p style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.7, margin: 0 }}>
-          {pending.map((l) => l.name).join(', ')}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function EowrCompliance({ leads, eowrEntries }) {
-  const today = todayPST();
-  const [year, setYear] = useState(Number(today.slice(0, 4)));
-  const [month, setMonth] = useState(Number(today.slice(5, 7)));
-  const [expanded, setExpanded] = useState(() => new Set());
-
-  function toggle(week) {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(week)) next.delete(week);
-      else next.add(week);
-      return next;
-    });
-  }
-
-  function goPrevMonth() {
-    if (month === 1) {
-      setYear((y) => y - 1);
-      setMonth(12);
-    } else {
-      setMonth((m) => m - 1);
-    }
-  }
-  function goNextMonth() {
-    if (month === 12) {
-      setYear((y) => y + 1);
-      setMonth(1);
-    } else {
-      setMonth((m) => m + 1);
-    }
-  }
-
-  const weeks = mondaysInMonth(year, month);
+  const mondays = mondaysInMonth(monthCursor.year, monthCursor.month);
 
   return (
-    <div className="card home-section">
-      <p className="home-section-title">EOWr compliance</p>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <button className="ghost" onClick={goPrevMonth} style={{ padding: '4px 10px' }}>
-          ←
-        </button>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{monthLabel(year, month)}</span>
-        <button className="ghost" onClick={goNextMonth} style={{ padding: '4px 10px' }}>
-          →
-        </button>
+    <div>
+      <div className="card home-section">
+        <p className="home-section-title">EODr compliance</p>
+        <div className="field" style={{ maxWidth: 220 }}><label>Date</label><input type="date" value={eodrDate} onChange={(e) => setEodrDate(e.target.value)} /></div>
+        <p style={{ fontSize: 12, color: 'var(--ink-soft)', margin: '4px 0 8px' }}>{submittedEodr.size} / {leads.length} submitted</p>
+        <div style={{ height: 8, background: '#eee', borderRadius: 4, overflow: 'hidden', marginBottom: 10 }}>
+          <div style={{ height: '100%', width: `${eodrPct}%`, background: 'var(--brand-green)' }} />
+        </div>
+        {eodrPending.length > 0 && (
+          <div><p style={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--ink-soft)', marginBottom: 4 }}>Pending</p>
+            {eodrPending.map((l) => <p key={l.id} className="home-line">{l.name}</p>)}
+          </div>
+        )}
       </div>
 
-      {weeks.length === 0 ? (
-        <p className="empty-note">No weeks this month.</p>
-      ) : (
-        weeks.map((w) => {
-          const submitted = leads.filter((l) =>
-            eowrEntries.some(
-              (e) => e.weekStart === w && e.tl.toLowerCase().trim() === l.name.toLowerCase().trim()
-            )
-          );
-          const isOpen = expanded.has(w);
+      <div className="card home-section" style={{ marginTop: 16 }}>
+        <p className="home-section-title">EOWr compliance</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <button className="ghost" onClick={() => setMonthCursor((c) => c.month === 1 ? { year: c.year - 1, month: 12 } : { year: c.year, month: c.month - 1 })}>←</button>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>{monthLabel(monthCursor.year, monthCursor.month)}</span>
+          <button className="ghost" onClick={() => setMonthCursor((c) => c.month === 12 ? { year: c.year + 1, month: 1 } : { year: c.year, month: c.month + 1 })}>→</button>
+        </div>
+        {mondays.map((w) => {
+          const submitted = new Set(eowrEntries.filter((e) => e.weekStart === w).map((e) => e.tl.toLowerCase().trim()));
+          const pending = leads.filter((l) => !submitted.has(l.name.toLowerCase().trim()));
+          const isOpen = expandedWeek === w;
           return (
-            <div key={w}>
-              <div
-                onClick={() => toggle(w)}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '8px 0',
-                  borderBottom: '0.5px solid var(--line)',
-                  cursor: 'pointer',
-                }}
-              >
-                <span style={{ fontSize: 13, color: 'var(--ink)' }}>{formatWeekLabel(w)}</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
-                    {submitted.length}/{leads.length}
-                  </span>
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      transition: 'transform 0.15s',
-                      transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-                      fontSize: 12,
-                      color: 'var(--ink-soft)',
-                    }}
-                  >
-                    ›
-                  </span>
-                </span>
+            <div key={w} style={{ borderBottom: '1px solid var(--line)', padding: '8px 0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => setExpandedWeek(isOpen ? null : w)}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{formatWeekLabel(w)}</span>
+                <span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{submitted.size} / {leads.length}</span>
               </div>
               {isOpen && (
-                <p style={{ fontSize: 12, color: 'var(--ink-soft)', padding: '8px 0 8px 12px', margin: 0 }}>
-                  {submitted.length === 0
-                    ? 'Nobody yet.'
-                    : `Submitted: ${submitted.map((l) => l.name).join(', ')}`}
-                </p>
+                <div style={{ marginTop: 8 }}>
+                  {leads.map((l) => (
+                    <div className="hist-row" key={l.id}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {submitted.has(l.name.toLowerCase().trim()) ? (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#69C920" strokeWidth="3"><path d="M4 12l6 6L20 6" /></svg>
+                        ) : (
+                          <span style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid #c2c7d6', display: 'inline-block' }} />
+                        )}
+                        <span className="who" style={{ flex: 'none' }}>{l.name}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           );
-        })
-      )}
-    </div>
-  );
-}
-
-export default function AdminTrackerTab({ leads, eodEntries, eowrEntries }) {
-  return (
-    <div>
-      <EodrCompliance leads={leads} eodEntries={eodEntries} />
-      <div style={{ marginTop: 16 }}>
-        <EowrCompliance leads={leads} eowrEntries={eowrEntries} />
+        })}
       </div>
     </div>
   );

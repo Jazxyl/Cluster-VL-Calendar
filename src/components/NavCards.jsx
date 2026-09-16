@@ -1,9 +1,7 @@
 import { useState } from 'react';
 
 const ICONS = {
-  home: (
-    <path d="M4 12l8-8 8 8M6 10v10h5v-6h2v6h5V10" />
-  ),
+  home: <path d="M4 12l8-8 8 8M6 10v10h5v-6h2v6h5V10" />,
   calendar: (
     <>
       <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -23,9 +21,7 @@ const ICONS = {
       <path d="M9.5 19a2.5 2.5 0 0 0 5 0" />
     </>
   ),
-  star: (
-    <path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.6 7-6.2-3.7L5.8 21l1.6-7L2 9.3l7.1-.7L12 2z" />
-  ),
+  star: <path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.6 7-6.2-3.7L5.8 21l1.6-7L2 9.3l7.1-.7L12 2z" />,
   profile: (
     <>
       <circle cx="12" cy="8" r="4" />
@@ -77,7 +73,6 @@ function initials(fullName) {
 function UserMenu({ session, currentLead, onGoToProfile, onGoToRoster, onSignOut }) {
   const [open, setOpen] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
-
   const displayName = currentLead?.name || session?.name || 'Account';
   const showPhoto = currentLead?.photoLink && !imgFailed;
 
@@ -90,31 +85,16 @@ function UserMenu({ session, currentLead, onGoToProfile, onGoToRoster, onSignOut
     <div className="sidebar-usermenu">
       {open && (
         <div className="sidebar-user-panel">
-          <button className="sidebar-user-option" onClick={() => handleOption(onGoToProfile)}>
-            Profile
-          </button>
-          <button className="sidebar-user-option" onClick={() => handleOption(onGoToRoster)}>
-            Roster
-          </button>
-          <button className="sidebar-user-option sidebar-user-option-danger" onClick={() => handleOption(onSignOut)}>
-            Sign out
-          </button>
+          <button className="sidebar-user-option" onClick={() => handleOption(onGoToProfile)}>Profile</button>
+          <button className="sidebar-user-option" onClick={() => handleOption(onGoToRoster)}>Roster</button>
+          <button className="sidebar-user-option sidebar-user-option-danger" onClick={() => handleOption(onSignOut)}>Sign out</button>
         </div>
       )}
-
       <button className="sidebar-user-trigger" onClick={() => setOpen((o) => !o)}>
         {showPhoto ? (
-          <img
-            src={currentLead.photoLink}
-            alt={displayName}
-            className="sidebar-user-avatar"
-            onError={() => setImgFailed(true)}
-          />
+          <img src={currentLead.photoLink} alt={displayName} className="sidebar-user-avatar" onError={() => setImgFailed(true)} />
         ) : (
-          <div
-            className="sidebar-user-avatar sidebar-user-avatar-fallback"
-            style={{ background: currentLead?.color || '#69C920' }}
-          >
+          <div className="sidebar-user-avatar sidebar-user-avatar-fallback" style={{ background: currentLead?.color || '#69C920' }}>
             {initials(displayName)}
           </div>
         )}
@@ -124,18 +104,7 @@ function UserMenu({ session, currentLead, onGoToProfile, onGoToRoster, onSignOut
   );
 }
 
-export default function NavCards({
-  items,
-  active,
-  onSelect,
-  isOpen,
-  onClose,
-  session,
-  currentLead,
-  onGoToProfile,
-  onGoToRoster,
-  onSignOut,
-}) {
+export default function NavCards({ items, active, onSelect, isOpen, onClose, session, currentLead, onGoToProfile, onGoToRoster, onSignOut }) {
   return (
     <>
       {isOpen && <div className="sidebar-backdrop" onClick={onClose} />}
@@ -147,24 +116,14 @@ export default function NavCards({
             <button
               key={item.key}
               className={`sidebar-item ${isActive ? 'sidebar-item-active' : ''}`}
-              onClick={() => {
-                onSelect(item.key);
-                onClose();
-              }}
+              onClick={() => { onSelect(item.key); onClose(); }}
             >
               <NavIcon name={item.icon} color={isActive ? '#6EFF7B' : 'rgba(255,255,255,0.55)'} />
               <span>{item.title}</span>
             </button>
           );
         })}
-
-        <UserMenu
-          session={session}
-          currentLead={currentLead}
-          onGoToProfile={onGoToProfile}
-          onGoToRoster={onGoToRoster}
-          onSignOut={onSignOut}
-        />
+        <UserMenu session={session} currentLead={currentLead} onGoToProfile={onGoToProfile} onGoToRoster={onGoToRoster} onSignOut={onSignOut} />
       </div>
     </>
   );

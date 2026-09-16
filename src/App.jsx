@@ -73,29 +73,17 @@ const NAV_ITEMS = [
   { key: 'profiles', title: 'Profiles', desc: 'Meet the team', icon: 'profile' },
 ];
 
-async function safeFetchTab(tabName, expectedHeader) {
-  try {
-    return await fetchTabAsObjects(csvUrlForTab(tabName), expectedHeader);
-  } catch {
-    return [];
-  }
-}
-
 function AppContent({ session, onSignOut }) {
-  const isAdmin = (session?.role || '').toLowerCase() === 'admin';
-  const currentUserName = session?.name || '';
-
   const [nav, setNav] = useState('home');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [ptoSubTab, setPtoSubTab] = useState('calendar');
-
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [leads, setLeads] = useState([]);
   const [filings, setFilings] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [birthdays, setBirthdays] = useState([]);
+  const [aprs, setAprs] = useState([]);
   const [huddles, setHuddles] = useState([]);
   const [townhall, setTownhall] = useState(null);
-  const [aprs, setAprs] = useState([]);
   const [aprCompletions, setAprCompletions] = useState(new Set());
   const [eodEntries, setEodEntries] = useState([]);
   const [eowrEntries, setEowrEntries] = useState([]);
@@ -108,7 +96,6 @@ function AppContent({ session, onSignOut }) {
   const [memos, setMemos] = useState([]);
   const [memoConfirmations, setMemoConfirmations] = useState([]);
   const [clusterLinks, setClusterLinks] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
@@ -119,23 +106,24 @@ function AppContent({ session, onSignOut }) {
     setTimeout(() => setToastMsg(''), 2500);
   }, []);
 
-  const showSuccessModal = useCallback((msg) => {
-    setSuccessMessage(msg);
-  }, []);
+  const showSuccessModal = useCallback((msg) => { setSuccessMessage(msg); }, []);
+  function handleSuccessConfirm() { setSuccessMessage(''); loadData(); }
 
-  function handleSuccessConfirm() {
-    setSuccessMessage('');
-    loadData();
+  const currentUserName = session?.name || '';
+  const isAdmin = adminNames.has((currentUserName || '').toLowerCase());
+
+  async function safeFetchTab(tabName, expectedHeader) {
+    try {
+      return await fetchTabAsObjects(csvUrlForTab(tabName), expectedHeader);
+    } catch {
+      return [];
+    }
   }
 
-  const loadData = useCallback(async () => {
-    if (!SHEET_ID) {
-      setLoading(false);
-      return;
-    }
+  const loadData = useCallback(() => {
+    if (!SHEET_ID) { setLoading(false); return; }
     setLoading(true);
     setError(null);
-
     const tasks = [
       safeFetchTab(TEAM_LEADS_TAB, 'Name').then((rows) => {
         const nextLeads = rows
@@ -144,22 +132,16 @@ function AppContent({ session, onSignOut }) {
         setLeads(nextLeads);
       }),
       safeFetchTab(FILINGS_TAB, 'Timestamp').then((rows) => {
-        const nextFilings = rows
-          .filter((r) => r.Lead && r.Start && r.End)
-          .map((r) => ({
-            id: `${r.Lead}-${r.Start}-${r.End}-${r.Timestamp || ''}`,
-            leadName: r.Lead,
-            start: r.Start,
-            end: r.End,
-            approved: (r.Status || '').toLowerCase() === 'approved',
-            filedOn: r.FiledOn || '',
-            duration: Number(r.DurationBusinessDays) || 0,
-            weeksNeeded: r.RequiredNoticeDays ? Math.round(Number(r.RequiredNoticeDays) / 7) : 0,
-            noticeGiven: Number(r.NoticeGivenDays) || 0,
-            reason: r.Note || '',
-          }))
-          .reverse();
-        setFilings(nextFilings);
+        setFilings(
+          rows
+            .filter((r) => r.Lead && r.Start && r.End)
+            .map((r, i) => ({
+              id: i, leadName: r.Lead.trim(), start: r.Start, end: r.End,
+              approved: (r.Status || '').toLowerCase() === 'approved',
+              filedOn: r.FiledOn || '', reason: r.Note || '',
+            }))
+            .sort((a, b) => (b.filedOn || '').localeCompare(a.filedOn || ''))
+        );
       }),
       safeFetchTab(ANNOUNCEMENTS_TAB, 'Message').then((rows) => {
         setAnnouncements(rows.filter((r) => r.Message && r.Message.trim()).map((r) => ({ message: r.Message.trim() })));
@@ -172,197 +154,99 @@ function AppContent({ session, onSignOut }) {
           rows
             .filter((r) => r.Name && r.Date)
             .map((r) => ({
-              name: r.Name.trim(),
-              date: parseUSDate(r.Date.trim()),
-              tl: (r.TL || '').trim(),
-              hubstaffId: r['Hubstaff ID'] || '',
-              status: (r.Status || 'Active').trim(),
+              name: r.Name.trim(), date: parseUSDate(r.Date.trim()), tl: (r.TL || '').trim(),
+              hubstaffId: r['Hubstaff ID'] || '', status: (r.Status || 'Active').trim(),
             }))
             .filter((a) => a.date)
             .filter((a) => a.status.toLowerCase() !== 'inactive')
         );
       }),
       fetchCalendarMeetings().then((calendarMeetings) => {
-        setHuddles(calendarMeetings.huddles);
-        setTownhall(calendarMeetings.townhall);
+        setHuddles(calendarMeetings.huddles || []);
+        setTownhall(calendarMeetings.townhall || null);
       }),
       safeFetchTab(APR_COMPLETIONS_TAB, 'Timestamp').then((rows) => {
-        const keys = rows
-          .filter((r) => r.Name && r.OccurrenceDate)
-          .map((r) => `${r.Name.trim().toLowerCase()}|${r.OccurrenceDate.trim()}`);
-        setAprCompletions(new Set(keys));
+        setAprCompletions(new Set(rows.filter((r) => r.Name && r.OccurrenceDate).map((r) => `${r.Name.trim().toLowerCase()}|${r.OccurrenceDate.trim()}`)));
       }),
       safeFetchTab(EOD_TAB, 'Timestamp').then((rows) => {
-        setEodEntries(
-          rows.filter((r) => r.Lead && r.Date).map((r) => ({ lead: r.Lead.trim(), date: r.Date.trim() }))
-        );
+        setEodEntries(rows.filter((r) => r.Lead && r.Date).map((r) => ({ lead: r.Lead.trim(), date: r.Date.trim() })));
       }),
       safeFetchTab(EOWR_TAB, 'Timestamp').then((rows) => {
-        setEowrEntries(
-          rows
-            .filter((r) => r.TL && r.WeekStart)
-            .map((r) => ({ tl: r.TL.trim(), weekStart: r.WeekStart.trim(), sheetLink: r.SheetLink || '' }))
-        );
+        setEowrEntries(rows.filter((r) => r.TL && r.WeekStart).map((r) => ({ tl: r.TL.trim(), weekStart: r.WeekStart.trim(), sheetLink: r.SheetLink || '' })));
       }),
       safeFetchTab(USERS_TAB, 'Email').then((rows) => {
-        const names = rows
-          .filter((r) => r.Name && (r.Role || '').toLowerCase().trim() === 'admin')
-          .map((r) => r.Name.trim().toLowerCase());
+        const names = rows.filter((r) => r.Name && (r.Role || '').toLowerCase().trim() === 'admin').map((r) => r.Name.trim().toLowerCase());
         setAdminNames(new Set(names));
-
         const emailMap = {};
-        rows.forEach((r) => {
-          if (r.Name && r.Email) emailMap[r.Name.trim().toLowerCase()] = r.Email.trim();
-        });
+        rows.forEach((r) => { if (r.Name && r.Email) emailMap[r.Name.trim().toLowerCase()] = r.Email.trim(); });
         setUserEmails(emailMap);
       }),
       safeFetchTab(NOMINATIONS_TAB, 'Timestamp').then((rows) => {
         setNominations(
-          rows
-            .filter((r) => r.TL && r.Month)
-            .map((r) => ({
-              tl: r.TL.trim(),
-              agent: r.Agent || '',
-              client: r.Client || '',
-              reason: r.Reason || '',
-              month: r.Month.trim(),
-              recordingLink: r.RecordingLink || '',
-            }))
+          rows.filter((r) => r.TL && r.Month).map((r) => ({
+            tl: r.TL.trim(), agent: r.Agent || '', client: r.Client || '', reason: r.Reason || '',
+            month: r.Month.trim(), recordingLink: r.RecordingLink || '',
+          }))
         );
       }),
       safeFetchTab(EXPANSION_BONUS_TAB, 'Timestamp').then((rows) => {
         setExpansionBonuses(
-          rows
-            .filter((r) => r.TL && r.Timestamp)
-            .map((r) => ({
-              timestamp: r.Timestamp.trim(),
-              tl: r.TL.trim(),
-              agent: r.Agent || '',
-              client: r.Client || '',
-              startDate: r.StartDate || '',
-              hubspotLink: r.HubspotLink || '',
-            }))
+          rows.filter((r) => r.TL && r.Timestamp).map((r) => ({
+            timestamp: r.Timestamp.trim(), tl: r.TL.trim(), agent: r.Agent || '', client: r.Client || '',
+            startDate: r.StartDate || '', hubspotLink: r.HubspotLink || '',
+          }))
         );
       }),
       safeFetchTab(EXPANSION_BONUS_COMPLETIONS_TAB, 'Timestamp').then((rows) => {
         setExpansionBonusCompletions(
-          rows
-            .filter((r) => r.OriginalTimestamp)
-            .map((r) => ({
-              originalTimestamp: r.OriginalTimestamp.trim(),
-              processedBy: r.ProcessedBy || '',
-              notes: r.Notes || '',
-            }))
+          rows.filter((r) => r.OriginalTimestamp).map((r) => ({
+            originalTimestamp: r.OriginalTimestamp.trim(), processedBy: r.ProcessedBy || '',
+            notes: r.Notes || '', status: r.Status || 'Approved',
+          }))
         );
       }),
       safeFetchTab(COACHING_COMPLIANCE_TAB, 'Timestamp').then((rows) => {
         setCoachingEntries(
-          rows
-            .filter((r) => r.TL && r.Agent)
-            .map((r) => ({
-              timestamp: r.Timestamp || '',
-              tl: r.TL.trim(),
-              agent: r.Agent.trim(),
-              type: r.Type || '',
-              fathomLink: r.FathomLink || '',
-            }))
+          rows.filter((r) => r.TL && r.Agent).map((r) => ({
+            timestamp: r.Timestamp || '', tl: r.TL.trim(), agent: r.Agent.trim(), type: r.Type || '', fathomLink: r.FathomLink || '',
+          }))
         );
       }),
       safeFetchTab(EMEMOS_TAB, 'Timestamp').then((rows) => {
-        setMemos(
-          rows
-            .filter((r) => r.Title && r.Link)
-            .map((r) => ({
-              title: r.Title.trim(),
-              link: r.Link.trim(),
-              datePosted: r.DatePosted || '',
-            }))
-        );
+        setMemos(rows.filter((r) => r.Title && r.Link).map((r) => ({ title: r.Title.trim(), link: r.Link.trim(), datePosted: r.DatePosted || '' })));
       }),
       safeFetchTab(EMEMO_CONFIRMATIONS_TAB, 'Timestamp').then((rows) => {
-        setMemoConfirmations(
-          rows
-            .filter((r) => r.TL && r.MemoTitle)
-            .map((r) => ({ tl: r.TL.trim(), memoTitle: r.MemoTitle.trim() }))
-        );
+        setMemoConfirmations(rows.filter((r) => r.TL && r.MemoTitle).map((r) => ({ tl: r.TL.trim(), memoTitle: r.MemoTitle.trim() })));
       }),
       safeFetchTab(CLUSTER_LINKS_TAB, 'Timestamp').then((rows) => {
-        setClusterLinks(
-          rows
-            .filter((r) => r.Name && r.URL)
-            .map((r) => ({ name: r.Name.trim(), url: r.URL.trim(), description: r.Description || '' }))
-        );
+        setClusterLinks(rows.filter((r) => r.Name && r.URL).map((r) => ({ name: r.Name.trim(), url: r.URL.trim(), description: r.Description || '' })));
       }),
     ];
 
-    try {
-      await Promise.all(tasks);
-    } catch (err) {
-      setError(err.message || 'Failed to load the sheet');
-    }
-    setLoading(false);
+    Promise.allSettled(tasks).then(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   const entries = filings.filter((f) => f.approved);
-  // Now that Users.Name is the full name (matching TeamLeads.Name exactly),
-  // no short-to-full resolution is needed anywhere — currentUserName IS the
-  // full name already, and every match against it is a direct exact match.
   const reportableLeads = leads.filter((l) => !adminNames.has(l.name.toLowerCase()));
 
   const currentLead = leads.find((l) => l.name.toLowerCase() === (currentUserName || '').toLowerCase()) || null;
   const currentEmail = userEmails[(currentUserName || '').toLowerCase()] || '';
-  const currentBirthday =
-    birthdays.find((b) => b.name.toLowerCase().trim() === (currentUserName || '').toLowerCase().trim()) || null;
-  const rosterAgentsRaw = aprs.filter(
-    (a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim()
-  );
-  const rosterAgents = Array.from(
-    new Map(rosterAgentsRaw.map((a) => [a.name.toLowerCase().trim(), a])).values()
-  );
+  const currentBirthday = birthdays.find((b) => b.name.toLowerCase().trim() === (currentUserName || '').toLowerCase().trim()) || null;
+  const rosterAgentsRaw = aprs.filter((a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim());
+  const rosterAgents = Array.from(new Map(rosterAgentsRaw.map((a) => [a.name.toLowerCase().trim(), a])).values());
 
   async function submitFiling({ leadName, start, end, reason }) {
     const todayStr = todayPST();
-
-    const duplicate = entries.find(
-      (e) => e.leadName === leadName && rangesOverlap(start, end, e.start, e.end)
-    );
-
-    if (duplicate) {
-      const record = {
-        leadName,
-        start,
-        end,
-        reason,
-        filedOn: todayStr,
-        duration: 0,
-        weeksNeeded: 0,
-        daysNeeded: 0,
-        noticeGiven: 0,
-        approved: false,
-        rejectReason: 'duplicate',
-        conflictStart: duplicate.start,
-        conflictEnd: duplicate.end,
-      };
-      setFilings((prev) => [{ id: `${leadName}-${start}-${end}-local`, ...record }, ...prev]);
-      postToSheet(filingPayload(record)).then((res) => {
-        if (!res.ok) toast('Filed locally, but the sheet write failed — check the webhook URL');
-      });
-      return record;
-    }
-
+    const dup = entries.find((f) => f.leadName === leadName && rangesOverlap(f.start, f.end, start, end));
+    if (dup) return { leadName, start, end, approved: false, rejectReason: 'duplicate', conflictStart: dup.start, conflictEnd: dup.end };
     const evalResult = evaluateFiling({ start, end, todayStr });
-    const record = { leadName, start, end, reason, filedOn: todayStr, rejectReason: 'notice', ...evalResult };
-
-    setFilings((prev) => [{ id: `${leadName}-${start}-${end}-local`, ...record }, ...prev]);
-
+    const record = { id: Date.now(), leadName, start, end, filedOn: todayStr, reason: reason || '', approved: evalResult.approved, ...evalResult };
+    setFilings((prev) => [record, ...prev]);
     postToSheet(filingPayload(record)).then((res) => {
       if (!res.ok) toast('Filed locally, but the sheet write failed — check the webhook URL');
     });
-
     return record;
   }
 
@@ -392,6 +276,14 @@ function AppContent({ session, onSignOut }) {
     return { ok: true };
   }
 
+  function editNomination({ tl, month, agent, client, reason, recordingLink }) {
+    setNominations((prev) => prev.map((n) => (n.tl === tl && n.month === month ? { ...n, agent, client, reason, recordingLink } : n)));
+    postToSheet(editNominationPayload({ tl, month, agent, client, reason, recordingLink })).then((res) => {
+      if (!res.ok) toast('Saved locally, but the sheet write failed — check the webhook URL');
+    });
+    return { ok: true };
+  }
+
   function submitExpansionBonus({ timestamp, tl, agent, client, startDate, hubspotLink }) {
     const record = { timestamp, tl, agent, client, startDate, hubspotLink };
     setExpansionBonuses((prev) => [record, ...prev]);
@@ -401,8 +293,8 @@ function AppContent({ session, onSignOut }) {
     return { ok: true };
   }
 
-  function processExpansionBonus({ originalTimestamp, notes }) {
-    const record = { originalTimestamp, processedBy: currentUserName, notes };
+  function processExpansionBonus({ originalTimestamp, notes, status }) {
+    const record = { originalTimestamp, processedBy: currentUserName, notes, status: status || 'Approved' };
     setExpansionBonusCompletions((prev) => [record, ...prev]);
     postToSheet(expansionBonusCompletionPayload(record)).then((res) => {
       if (!res.ok) toast('Marked locally, but the sheet write failed — check the webhook URL');
@@ -444,16 +336,6 @@ function AppContent({ session, onSignOut }) {
     return { ok: true };
   }
 
-  function editNomination({ tl, month, agent, client, reason, recordingLink }) {
-    setNominations((prev) =>
-      prev.map((n) => (n.tl === tl && n.month === month ? { ...n, agent, client, reason, recordingLink } : n))
-    );
-    postToSheet(editNominationPayload({ tl, month, agent, client, reason, recordingLink })).then((res) => {
-      if (!res.ok) toast('Saved locally, but the sheet write failed — check the webhook URL');
-    });
-    return { ok: true };
-  }
-
   function submitAddAgent({ name, hubstaffId, date }) {
     const record = { name, date, tl: currentUserName, hubstaffId, status: 'Active' };
     setAprs((prev) => [record, ...prev]);
@@ -464,31 +346,18 @@ function AppContent({ session, onSignOut }) {
   }
 
   async function removeAgent({ name, tl, hubstaffId }) {
-    // Optimistically drop them from local state immediately — since aprs is
-    // filtered to Active-only at the source, this correctly removes them
-    // everywhere (Roster, APR Notifications) without touching other logic.
     setAprs((prev) => prev.filter((a) => !(a.name === name && a.tl === tl)));
     const res = await postToSheet(updateAgentStatusPayload({ name, tl, hubstaffId, status: 'Inactive' }));
     return res;
   }
 
   async function editAgent({ originalName, tl, originalHubstaffId, newName, newHubstaffId, newDate }) {
-    setAprs((prev) =>
-      prev.map((a) =>
-        a.name === originalName && a.tl === tl
-          ? { ...a, name: newName, hubstaffId: newHubstaffId, date: newDate }
-          : a
-      )
-    );
-    const res = await postToSheet(
-      editAgentPayload({ originalName, tl, originalHubstaffId, newName, newHubstaffId, newDate })
-    );
+    setAprs((prev) => prev.map((a) => (a.name === originalName && a.tl === tl ? { ...a, name: newName, hubstaffId: newHubstaffId, date: newDate } : a)));
+    const res = await postToSheet(editAgentPayload({ originalName, tl, originalHubstaffId, newName, newHubstaffId, newDate }));
     return res;
   }
 
-  if (!SHEET_ID) {
-    return <SetupNotice missing="sheet" />;
-  }
+  if (!SHEET_ID) return <SetupNotice missing="sheet" />;
 
   return (
     <div className="app-shell">
@@ -520,12 +389,7 @@ function AppContent({ session, onSignOut }) {
                   ) : nav === 'myroster' ? (
                     'Your Roster'
                   ) : nav === 'coaching' ? (
-                    <a
-                      href="https://talentpopapp.com/performance-monitoring-form"
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ color: 'inherit', textDecoration: 'none' }}
-                    >
+                    <a href="https://talentpopapp.com/performance-monitoring-form" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
                       {NAV_ITEMS.find((n) => n.key === nav)?.title}
                     </a>
                   ) : (
@@ -533,19 +397,13 @@ function AppContent({ session, onSignOut }) {
                   )}
                 </h1>
                 <p className="sub">
-                  {nav === 'myprofile'
-                    ? 'Your own account details'
-                    : nav === 'myroster'
-                    ? 'Agents assigned to you'
-                    : NAV_ITEMS.find((n) => n.key === nav)?.desc || 'Your cluster, all in one place'}
+                  {nav === 'myprofile' ? 'Your own account details' : nav === 'myroster' ? 'Agents assigned to you' : NAV_ITEMS.find((n) => n.key === nav)?.desc || 'Your cluster, all in one place'}
                 </p>
               </div>
             </div>
             <div className="actions">
               <ClockBar />
-              <button className="ghost" onClick={loadData} disabled={loading}>
-                {loading ? 'Refreshing…' : 'Refresh from sheet'}
-              </button>
+              <button className="ghost" onClick={loadData} disabled={loading}>{loading ? 'Refreshing…' : 'Refresh from sheet'}</button>
             </div>
           </div>
 
@@ -553,142 +411,69 @@ function AppContent({ session, onSignOut }) {
           {error && <div className="card" style={{ padding: 14, marginBottom: 16, color: '#8a2f24' }}>{error}</div>}
 
           <div key={nav} className="tab-fade">
-        {nav === 'home' && (
-          <HomeTab
-            announcements={announcements}
-            birthdays={birthdays}
-            huddles={huddles}
-            townhall={townhall}
-            aprs={aprs}
-            isAdmin={isAdmin}
-            currentUserName={currentUserName}
-            onGoToApr={() => setNav('apr')}
-            nominations={nominations}
-            onGoToNominations={() => setNav('nominations')}
-            currentUserFullName={currentUserName}
-            expansionBonuses={expansionBonuses}
-            expansionBonusCompletions={expansionBonusCompletions}
-            onGoToExpansionBonus={() => setNav('expansionbonus')}
-          />
-        )}
-
-        {nav === 'pto' && (
-          <div>
-            <div className="tabnav">
-              <button
-                className={`tabbtn ${ptoSubTab === 'calendar' ? 'active' : ''}`}
-                onClick={() => setPtoSubTab('calendar')}
-              >
-                Calendar
-              </button>
-              <button
-                className={`tabbtn ${ptoSubTab === 'file' ? 'active' : ''}`}
-                onClick={() => setPtoSubTab('file')}
-              >
-                File a VL
-              </button>
-            </div>
-            <div key={ptoSubTab} className="tab-fade">
-              {ptoSubTab === 'calendar' && <CalendarTab leads={leads} entries={entries} />}
-              {ptoSubTab === 'file' && (
-                <FileVLTab
-                  leads={leads}
-                  filings={filings}
-                  onSubmit={submitFiling}
-                  currentUserName={currentUserName}
-                />
-              )}
-            </div>
-          </div>
-        )}
-
-        {nav === 'reports' && (
-          <ReportsTab
-            leads={reportableLeads}
-            eodEntries={eodEntries}
-            eowrEntries={eowrEntries}
-            isAdmin={isAdmin}
-            currentUserName={currentUserName}
-            onSubmitEowr={submitEowr}
-            showSuccessModal={showSuccessModal}
-            toast={toast}
-          />
-        )}
-        {nav === 'apr' && (
-          <APRTab
-            aprs={aprs}
-            isAdmin={isAdmin}
-            currentUserName={currentUserName}
-            aprCompletions={aprCompletions}
-            onCompleteApr={submitAprCompletion}
-          />
-        )}
-        {nav === 'nominations' && (
-          <TownHallNominationsTab
-            leads={leads}
-            nominations={nominations}
-            isAdmin={isAdmin}
-            currentUserName={currentUserName}
-            onSubmit={submitNomination}
-            onEditNomination={editNomination}
-            showSuccessModal={showSuccessModal}
-          />
-        )}
-        {nav === 'coaching' && (
-          <CoachingComplianceTab
-            leads={leads}
-            entries={coachingEntries}
-            isAdmin={isAdmin}
-            currentUserName={currentUserName}
-            onSubmit={submitCoaching}
-            showSuccessModal={showSuccessModal}
-          />
-        )}
-        {nav === 'expansionbonus' && (
-          <ExpansionBonusTab
-            leads={leads}
-            entries={expansionBonuses}
-            completions={expansionBonusCompletions}
-            isAdmin={isAdmin}
-            currentUserName={currentUserName}
-            onSubmit={submitExpansionBonus}
-            onProcess={processExpansionBonus}
-            showSuccessModal={showSuccessModal}
-          />
-        )}
-        {nav === 'ememos' && (
-          <EMemoTab
-            memos={memos}
-            memoConfirmations={memoConfirmations}
-            leads={leads}
-            isAdmin={isAdmin}
-            currentUserName={currentUserName}
-            onAddMemo={submitAddMemo}
-            onConfirm={confirmMemo}
-            showSuccessModal={showSuccessModal}
-          />
-        )}
-        {nav === 'clusterlinks' && (
-          <ClusterLinksTab
-            links={clusterLinks}
-            isAdmin={isAdmin}
-            onAddLink={submitAddLink}
-            showSuccessModal={showSuccessModal}
-          />
-        )}
-        {nav === 'profiles' && <ProfilesTab leads={leads} userEmails={userEmails} birthdays={birthdays} />}
-        {nav === 'myprofile' && (
-          <MyProfilePage lead={currentLead} email={currentEmail} birthday={currentBirthday} />
-        )}
-        {nav === 'myroster' && (
-          <MyRosterPage
-            agents={rosterAgents}
-            onAddAgent={submitAddAgent}
-            onRemoveAgent={removeAgent}
-            onEditAgent={editAgent}
-            showSuccessModal={showSuccessModal}
-          />
-        )}
+            {nav === 'home' && (
+              <HomeTab
+                announcements={announcements} birthdays={birthdays} huddles={huddles} townhall={townhall} aprs={aprs}
+                isAdmin={isAdmin} currentUserName={currentUserName} onGoToApr={() => setNav('apr')}
+                nominations={nominations} onGoToNominations={() => setNav('nominations')} currentUserFullName={currentUserName}
+                expansionBonuses={expansionBonuses} expansionBonusCompletions={expansionBonusCompletions} onGoToExpansionBonus={() => setNav('expansionbonus')}
+              />
+            )}
+            {nav === 'pto' && (
+              <div>
+                <div className="tabnav">
+                  <button className={`tabbtn ${ptoSubTab === 'calendar' ? 'active' : ''}`} onClick={() => setPtoSubTab('calendar')}>Calendar</button>
+                  <button className={`tabbtn ${ptoSubTab === 'file' ? 'active' : ''}`} onClick={() => setPtoSubTab('file')}>File a VL</button>
+                </div>
+                <div key={ptoSubTab} className="tab-fade">
+                  {ptoSubTab === 'calendar' && <CalendarTab leads={leads} entries={entries} />}
+                  {ptoSubTab === 'file' && (
+                    <FileVLTab leads={leads} filings={filings} onSubmit={submitFiling} currentUserName={currentUserName} />
+                  )}
+                </div>
+              </div>
+            )}
+            {nav === 'reports' && (
+              <ReportsTab
+                leads={reportableLeads} eodEntries={eodEntries} eowrEntries={eowrEntries} isAdmin={isAdmin}
+                currentUserName={currentUserName} onSubmitEowr={submitEowr} showSuccessModal={showSuccessModal} toast={toast}
+              />
+            )}
+            {nav === 'coaching' && (
+              <CoachingComplianceTab
+                leads={leads} entries={coachingEntries} isAdmin={isAdmin} currentUserName={currentUserName}
+                onSubmit={submitCoaching} showSuccessModal={showSuccessModal}
+              />
+            )}
+            {nav === 'nominations' && (
+              <TownHallNominationsTab
+                leads={leads} nominations={nominations} isAdmin={isAdmin} currentUserName={currentUserName}
+                onSubmit={submitNomination} onEditNomination={editNomination} showSuccessModal={showSuccessModal}
+              />
+            )}
+            {nav === 'apr' && (
+              <APRTab aprs={aprs} isAdmin={isAdmin} currentUserName={currentUserName} aprCompletions={aprCompletions} onCompleteApr={submitAprCompletion} />
+            )}
+            {nav === 'expansionbonus' && (
+              <ExpansionBonusTab
+                leads={leads} entries={expansionBonuses} completions={expansionBonusCompletions} isAdmin={isAdmin}
+                currentUserName={currentUserName} onSubmit={submitExpansionBonus} onProcess={processExpansionBonus} showSuccessModal={showSuccessModal}
+              />
+            )}
+            {nav === 'ememos' && (
+              <EMemoTab
+                memos={memos} memoConfirmations={memoConfirmations} leads={leads} isAdmin={isAdmin} currentUserName={currentUserName}
+                onAddMemo={submitAddMemo} onConfirm={confirmMemo} showSuccessModal={showSuccessModal}
+              />
+            )}
+            {nav === 'clusterlinks' && (
+              <ClusterLinksTab links={clusterLinks} isAdmin={isAdmin} onAddLink={submitAddLink} showSuccessModal={showSuccessModal} />
+            )}
+            {nav === 'profiles' && <ProfilesTab leads={leads} userEmails={userEmails} birthdays={birthdays} />}
+            {nav === 'myprofile' && <MyProfilePage lead={currentLead} email={currentEmail} birthday={currentBirthday} />}
+            {nav === 'myroster' && (
+              <MyRosterPage agents={rosterAgents} onAddAgent={submitAddAgent} onRemoveAgent={removeAgent} onEditAgent={editAgent} showSuccessModal={showSuccessModal} />
+            )}
           </div>
 
           <div className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>

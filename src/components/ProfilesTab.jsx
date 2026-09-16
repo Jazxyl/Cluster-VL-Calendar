@@ -11,20 +11,12 @@ function initials(fullName) {
 function ProfileCard({ lead, email, birthday }) {
   const [imgFailed, setImgFailed] = useState(false);
   const showPhoto = lead.photoLink && !imgFailed;
-
   return (
     <div className="card profile-card">
       {showPhoto ? (
-        <img
-          src={lead.photoLink}
-          alt={lead.name}
-          className="profile-photo"
-          onError={() => setImgFailed(true)}
-        />
+        <img src={lead.photoLink} alt={lead.name} className="profile-photo" onError={() => setImgFailed(true)} />
       ) : (
-        <div className="profile-photo profile-photo-fallback" style={{ background: lead.color }}>
-          {initials(lead.name)}
-        </div>
+        <div className="profile-photo profile-photo-fallback" style={{ background: lead.color }}>{initials(lead.name)}</div>
       )}
       <p className="profile-name">{lead.name}</p>
       <p className="profile-line">{email || 'No email on file'}</p>
@@ -34,14 +26,7 @@ function ProfileCard({ lead, email, birthday }) {
 }
 
 export default function ProfilesTab({ leads, userEmails, birthdays }) {
-  if (leads.length === 0) {
-    return (
-      <div className="card home-section">
-        <p className="empty-note">No team leads on file yet.</p>
-      </div>
-    );
-  }
-
+  if (leads.length === 0) return <div className="card home-section"><p className="empty-note">No team leads on file yet.</p></div>;
   return (
     <div className="profiles-grid">
       {leads.map((l) => {

@@ -16,25 +16,15 @@ export default function LoginGate({ children }) {
 
     function renderButton() {
       if (!window.google || !buttonRef.current) return;
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleCredential,
-      });
-      window.google.accounts.id.renderButton(buttonRef.current, {
-        theme: 'outline',
-        size: 'large',
-        text: 'signin_with',
-      });
+      window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredential });
+      window.google.accounts.id.renderButton(buttonRef.current, { theme: 'outline', size: 'large', text: 'signin_with' });
     }
 
     if (window.google) {
       renderButton();
     } else {
       const interval = setInterval(() => {
-        if (window.google) {
-          clearInterval(interval);
-          renderButton();
-        }
+        if (window.google) { clearInterval(interval); renderButton(); }
       }, 200);
       return () => clearInterval(interval);
     }
@@ -47,10 +37,8 @@ export default function LoginGate({ children }) {
     try {
       const payload = decodeJwt(response.credential);
       const email = (payload?.email || '').toLowerCase().trim();
-
       const rows = await fetchTabAsObjects(csvUrlForTab(USERS_TAB), 'Email');
       const matched = rows.find((r) => (r.Email || '').toLowerCase().trim() === email);
-
       if (matched) {
         saveSession(email, matched.Name, matched.Role);
         setSession(getSession());
@@ -76,11 +64,8 @@ export default function LoginGate({ children }) {
   return (
     <div className="wrap">
       <div className="card" style={{ padding: 32, maxWidth: 420, margin: '80px auto', textAlign: 'center' }}>
-        <p className="brand-eyebrow" style={{ textAlign: 'center' }}>
-          Cluster Joe
-        </p>
+        <p className="brand-eyebrow" style={{ textAlign: 'center' }}>Cluster Joe</p>
         <h1 style={{ marginBottom: 16 }}>Sign in</h1>
-
         {!GOOGLE_CLIENT_ID ? (
           <p style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
             No <code>VITE_GOOGLE_CLIENT_ID</code> is set. Add it as an environment variable and redeploy.

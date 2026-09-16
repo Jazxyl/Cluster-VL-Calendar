@@ -6,8 +6,7 @@ export default function SetupNotice({ missing }) {
           <h3 className="panel-title">Almost there</h3>
           <p style={{ fontSize: 13, lineHeight: 1.6 }}>
             No <code>VITE_SHEET_ID</code> is set, so there's nothing to read data from yet. Add it as an
-            environment variable (locally in <code>.env.local</code>, or in your Vercel project settings)
-            and redeploy. See <code>README.md</code> for the full setup.
+            environment variable and redeploy. See <code>README.md</code> for the full setup.
           </p>
         </div>
       </div>

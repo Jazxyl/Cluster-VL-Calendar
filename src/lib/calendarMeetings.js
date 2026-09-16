@@ -1,5 +1,4 @@
 import { WEBHOOK_URL } from '../config.js';
-
 export async function fetchCalendarMeetings() {
   if (!WEBHOOK_URL) return { huddles: [], townhall: null };
   try {
@@ -8,7 +7,5 @@ export async function fetchCalendarMeetings() {
     const data = await res.json();
     if (!data.ok) return { huddles: [], townhall: null };
     return { huddles: data.huddles || [], townhall: data.townhall || null };
-  } catch {
-    return { huddles: [], townhall: null };
-  }
+  } catch { return { huddles: [], townhall: null }; }
 }

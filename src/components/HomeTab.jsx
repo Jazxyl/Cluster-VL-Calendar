@@ -1,55 +1,26 @@
 import { todayPST, formatUSDate, isAprRelevant, daysFromAprDue, isNominationReminderWindow, currentMonthKey, formatBirthdayDate, isExpansionBonusMature } from '../lib/dates.js';
 
-function firstName(fullName) {
-  return (fullName || '').trim().split(' ')[0];
-}
+function firstName(fullName) { return (fullName || '').trim().split(' ')[0]; }
 
 export default function HomeTab({
-  announcements,
-  birthdays,
-  huddles,
-  townhall,
-  aprs,
-  isAdmin,
-  currentUserName,
-  onGoToApr,
-  nominations,
-  onGoToNominations,
-  currentUserFullName,
-  expansionBonuses,
-  expansionBonusCompletions,
-  onGoToExpansionBonus,
+  announcements, birthdays, huddles, townhall, aprs, isAdmin, currentUserName, onGoToApr,
+  nominations, onGoToNominations, currentUserFullName, expansionBonuses, expansionBonusCompletions, onGoToExpansionBonus,
 }) {
   const todayStr = todayPST();
   const currentMonth = todayStr.split('-')[1];
 
-  const visibleAprs = isAdmin
-    ? aprs
-    : aprs.filter((a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim());
-
-  const relevantAprs = visibleAprs
-    .filter((a) => isAprRelevant(a.date, todayStr))
-    .sort((a, b) => daysFromAprDue(a.date, todayStr) - daysFromAprDue(b.date, todayStr));
+  const visibleAprs = isAdmin ? aprs : aprs.filter((a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim());
+  const relevantAprs = visibleAprs.filter((a) => isAprRelevant(a.date, todayStr)).sort((a, b) => daysFromAprDue(a.date, todayStr) - daysFromAprDue(b.date, todayStr));
   const upcomingAprs = relevantAprs.slice(0, 5);
   const moreAprsCount = relevantAprs.length - upcomingAprs.length;
 
-  const birthdaysThisMonth = birthdays
-    .filter((b) => b.date.split('-')[0] === currentMonth)
-    .sort((a, b) => Number(a.date.split('-')[1]) - Number(b.date.split('-')[1]));
+  const birthdaysThisMonth = birthdays.filter((b) => b.date.split('-')[0] === currentMonth).sort((a, b) => Number(a.date.split('-')[1]) - Number(b.date.split('-')[1]));
 
-  const hasNominatedThisMonth = (nominations || []).some(
-    (n) =>
-      n.tl.toLowerCase().trim() === (currentUserFullName || '').toLowerCase().trim() &&
-      n.month === currentMonthKey(todayStr)
-  );
+  const hasNominatedThisMonth = (nominations || []).some((n) => n.tl.toLowerCase().trim() === (currentUserFullName || '').toLowerCase().trim() && n.month === currentMonthKey(todayStr));
   const showNominationReminder = isNominationReminderWindow(todayStr) && !hasNominatedThisMonth;
 
   const matureUnprocessedCount = isAdmin
-    ? (expansionBonuses || []).filter(
-        (e) =>
-          isExpansionBonusMature(e.startDate, todayStr) &&
-          !(expansionBonusCompletions || []).some((c) => c.originalTimestamp === e.timestamp)
-      ).length
+    ? (expansionBonuses || []).filter((e) => isExpansionBonusMature(e.startDate, todayStr) && !(expansionBonusCompletions || []).some((c) => c.originalTimestamp === e.timestamp)).length
     : 0;
 
   return (
@@ -61,9 +32,7 @@ export default function HomeTab({
             <path d="M9.5 19a2.5 2.5 0 0 0 5 0" />
           </svg>
           <div>
-            <p className="home-banner-title">
-              {relevantAprs.length} upcoming APR{relevantAprs.length === 1 ? '' : 's'}
-            </p>
+            <p className="home-banner-title">{relevantAprs.length} upcoming APR{relevantAprs.length === 1 ? '' : 's'}</p>
             <p className="home-banner-sub">
               {upcomingAprs.map((a) => `${firstName(a.name)} · ${formatUSDate(a.date)}`).join('  ·  ')}
               {moreAprsCount > 0 ? `  ·  +${moreAprsCount} more` : ''}
@@ -79,9 +48,7 @@ export default function HomeTab({
           </svg>
           <div>
             <p className="home-banner-title">Town Hall Nomination due soon</p>
-            <p className="home-banner-sub">
-              You haven't submitted a nomination this month — submissions close on the 16th.
-            </p>
+            <p className="home-banner-sub">You haven't submitted a nomination this month — submissions close on the 16th.</p>
           </div>
         </div>
       )}
@@ -93,9 +60,7 @@ export default function HomeTab({
             <path d="M17 6.5c0-1.9-2.2-3.5-5-3.5s-5 1.4-5 3.5c0 2.3 2.2 3 5 3.5s5 1.2 5 3.5c0 2.1-2.2 3.5-5 3.5s-5-1.6-5-3.5" />
           </svg>
           <div>
-            <p className="home-banner-title">
-              {matureUnprocessedCount} expansion bonus{matureUnprocessedCount === 1 ? '' : 'es'} need processing
-            </p>
+            <p className="home-banner-title">{matureUnprocessedCount} expansion bonus{matureUnprocessedCount === 1 ? '' : 'es'} need processing</p>
             <p className="home-banner-sub">30+ days since start date — head to Expansion Bonus to review.</p>
           </div>
         </div>
@@ -104,11 +69,7 @@ export default function HomeTab({
       {announcements.length > 0 && (
         <div className="card home-section">
           <p className="home-section-title">Announcements</p>
-          {announcements.map((a, i) => (
-            <p key={i} className="home-line">
-              {a.message}
-            </p>
-          ))}
+          {announcements.map((a, i) => <p key={i} className="home-line">{a.message}</p>)}
         </div>
       )}
 
@@ -116,40 +77,20 @@ export default function HomeTab({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div className="card home-section">
             <p className="home-section-title">Cluster huddle</p>
-            {huddles.length === 0 ? (
-              <p className="empty-note">Nothing scheduled yet.</p>
-            ) : (
-              huddles.map((h, i) => (
-                <p key={i} className="home-line">
-                  {i === 0 ? 'Next: ' : 'Then: '}
-                  {h.date} · {h.time}
-                </p>
-              ))
-            )}
+            {huddles.length === 0 ? <p className="empty-note">Nothing scheduled yet.</p> : huddles.map((h, i) => (
+              <p key={i} className="home-line">{i === 0 ? 'Next: ' : 'Then: '}{h.date} · {h.time}</p>
+            ))}
           </div>
           <div className="card home-section">
             <p className="home-section-title">Townhall</p>
-            {townhall ? (
-              <p className="home-line">
-                Next: {townhall.date} · {townhall.time}
-              </p>
-            ) : (
-              <p className="empty-note">Nothing scheduled yet.</p>
-            )}
+            {townhall ? <p className="home-line">Next: {townhall.date} · {townhall.time}</p> : <p className="empty-note">Nothing scheduled yet.</p>}
           </div>
         </div>
-
         <div className="card home-section">
           <p className="home-section-title">Birthdays this month</p>
-          {birthdaysThisMonth.length === 0 ? (
-            <p className="empty-note">No birthdays this month.</p>
-          ) : (
-            birthdaysThisMonth.map((b, i) => (
-              <p key={i} className="home-line">
-                {firstName(b.name)} — {formatBirthdayDate(b.date)}
-              </p>
-            ))
-          )}
+          {birthdaysThisMonth.length === 0 ? <p className="empty-note">No birthdays this month.</p> : birthdaysThisMonth.map((b, i) => (
+            <p key={i} className="home-line">{firstName(b.name)} — {formatBirthdayDate(b.date)}</p>
+          ))}
         </div>
       </div>
     </div>

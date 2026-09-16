@@ -5,6 +5,15 @@ function findCompletion(completions, timestamp) {
   return completions.find((c) => c.originalTimestamp === timestamp);
 }
 
+function statusLabel(completion) {
+  if (!completion) return 'Pending';
+  return completion.status === 'Denied' ? 'Denied' : 'Approved';
+}
+function statusBadgeClass(completion) {
+  if (!completion) return 'rejected';
+  return completion.status === 'Denied' ? 'rejected' : 'approved';
+}
+
 function ProcessRow({ entry, onProcess }) {
   const [checked, setChecked] = useState(false);
   const [notes, setNotes] = useState('');
@@ -15,10 +24,10 @@ function ProcessRow({ entry, onProcess }) {
     if (!e.target.checked) setNotes('');
   }
 
-  function handleSubmit() {
+  function handleDecision(status) {
     if (!notes.trim()) return;
     setSubmitting(true);
-    onProcess({ originalTimestamp: entry.timestamp, notes: notes.trim() });
+    onProcess({ originalTimestamp: entry.timestamp, notes: notes.trim(), status });
   }
 
   return (
@@ -29,20 +38,16 @@ function ProcessRow({ entry, onProcess }) {
           {entry.agent} <span style={{ fontWeight: 400, color: 'var(--ink-soft)' }}>· {entry.client}</span>
         </span>
       </label>
-      <p style={{ margin: '0 0 4px 26px', fontSize: 11, color: 'var(--ink-soft)' }}>
-        {entry.tl} · started {formatUSDate(entry.startDate)}
-      </p>
+      <p style={{ margin: '0 0 4px 26px', fontSize: 11, color: 'var(--ink-soft)' }}>{entry.tl} · started {formatUSDate(entry.startDate)}</p>
       {checked && (
         <div style={{ display: 'flex', gap: 6, margin: '6px 0 0 26px' }}>
-          <input
-            type="text"
-            placeholder="Notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 6, padding: '6px 8px', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
-          />
-          <button className="primary" onClick={handleSubmit} disabled={submitting || !notes.trim()}>
+          <input type="text" placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)}
+            style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 6, padding: '6px 8px', fontSize: 12, fontFamily: 'Inter, sans-serif' }} />
+          <button className="primary" onClick={() => handleDecision('Approved')} disabled={submitting || !notes.trim()}>
             {submitting ? 'Saving…' : 'Approve'}
+          </button>
+          <button className="ghost" style={{ color: '#c0392b' }} onClick={() => handleDecision('Denied')} disabled={submitting || !notes.trim()}>
+            {submitting ? 'Saving…' : 'Deny'}
           </button>
         </div>
       )}
@@ -52,19 +57,14 @@ function ProcessRow({ entry, onProcess }) {
 
 export default function ExpansionBonusStatusTab({ entries, completions, isAdmin, currentUserName, onProcess }) {
   const todayStr = todayPST();
-
   const actionable = [];
   const settled = [];
 
   entries.forEach((e) => {
     const completion = findCompletion(completions, e.timestamp);
-    if (completion) {
-      settled.push({ ...e, completion });
-    } else if (isExpansionBonusMature(e.startDate, todayStr)) {
-      actionable.push(e);
-    } else {
-      settled.push({ ...e, pending: true });
-    }
+    if (completion) settled.push({ ...e, completion });
+    else if (isExpansionBonusMature(e.startDate, todayStr)) actionable.push(e);
+    else settled.push({ ...e, pending: true });
   });
 
   return (
@@ -72,28 +72,19 @@ export default function ExpansionBonusStatusTab({ entries, completions, isAdmin,
       {isAdmin && (
         <div className="card home-section">
           <p className="home-section-title">Needs processing ({actionable.length})</p>
-          {actionable.length === 0 ? (
-            <p className="empty-note">Nothing to process right now.</p>
-          ) : (
-            actionable.map((e) => <ProcessRow key={e.timestamp} entry={e} onProcess={onProcess} />)
-          )}
+          {actionable.length === 0 ? <p className="empty-note">Nothing to process right now.</p> : actionable.map((e) => <ProcessRow key={e.timestamp} entry={e} onProcess={onProcess} />)}
         </div>
       )}
-
       <div className="card home-section" style={{ marginTop: isAdmin ? 16 : 0 }}>
         <p className="home-section-title">All submissions</p>
-        {entries.length === 0 ? (
-          <p className="empty-note">Nothing submitted yet.</p>
-        ) : (
+        {entries.length === 0 ? <p className="empty-note">Nothing submitted yet.</p> : (
           [...settled, ...(isAdmin ? [] : actionable)]
             .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
             .map((e, i) => {
               const completion = findCompletion(completions, e.timestamp);
               return (
                 <div className="hist-row" key={i}>
-                  <span className={`badge ${completion ? 'approved' : 'rejected'}`}>
-                    {completion ? 'Approved' : 'Pending'}
-                  </span>
+                  <span className={`badge ${statusBadgeClass(completion)}`}>{statusLabel(completion)}</span>
                   <span className="who">
                     {e.agent} · {e.client}
                     <span style={{ display: 'block', fontSize: 11, color: 'var(--ink-soft)' }}>
