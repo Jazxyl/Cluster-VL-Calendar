@@ -447,7 +447,7 @@ function AppContent({ session, onSignOut }) {
             )}
             {nav === 'nominations' && (
               <TownHallNominationsTab
-                leads={leads} nominations={nominations} isAdmin={isAdmin} currentUserName={currentUserName}
+                leads={leads} reportableLeads={reportableLeads} nominations={nominations} isAdmin={isAdmin} currentUserName={currentUserName}
                 onSubmit={submitNomination} onEditNomination={editNomination} showSuccessModal={showSuccessModal}
               />
             )}
