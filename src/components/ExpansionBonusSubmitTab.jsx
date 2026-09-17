@@ -25,7 +25,13 @@ export default function ExpansionBonusSubmitTab({ leads, entries, currentUserNam
 
     setSubmitting(true);
     setResult(null);
-    const timestamp = new Date().toISOString();
+    // Not an ISO date string on purpose: Google Sheets silently reformats anything
+    // date-shaped, and this value gets written into two different sheets/columns
+    // (ExpansionBonus.Timestamp and ExpansionBonusCompletions.OriginalTimestamp) that
+    // can each reformat it differently — breaking the exact-match lookup that links a
+    // Approve/Deny decision back to its submission. A mixed letters+digits ID never
+    // parses as a date, so it round-trips byte-for-byte through the sheet.
+    const timestamp = `EB-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
     const res = await onSubmit({ timestamp, tl: tlName, agent: agent.trim(), client: client.trim(), startDate, hubspotLink: hubspotLink.trim() });
     if (res.ok) { showSuccessModal('Expansion bonus submitted!'); setAgent(''); setClient(''); setHubspotLink(''); setStartDate(todayPST()); }
     else setResult({ ok: false, message: "Couldn't reach the sheet — check the webhook URL and try again." });
