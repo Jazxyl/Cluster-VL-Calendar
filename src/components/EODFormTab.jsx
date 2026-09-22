@@ -3,7 +3,7 @@ import { todayPST } from '../lib/dates.js';
 import { fileToBase64 } from '../lib/files.js';
 import { postToSheet, eodPayload } from '../lib/webhook.js';
 
-const EMPTY_FORM = { leadName: '', date: todayPST(), clientCalls: '', coachings: '', fathomLink: '', ticketMonitoring: '' };
+const EMPTY_FORM = { leadName: '', date: todayPST(), clientCalls: '', coachings: '', ticketMonitoring: '' };
 
 export default function EODFormTab({ leads, currentUserName, showSuccessModal, toast }) {
   const [form, setForm] = useState(() => ({ ...EMPTY_FORM, leadName: currentUserName || leads?.[0]?.name || '' }));
@@ -26,7 +26,6 @@ export default function EODFormTab({ leads, currentUserName, showSuccessModal, t
     if (!form.date) missing.push('Date');
     if (!form.clientCalls.trim()) missing.push('Client-related calls attended');
     if (!form.coachings.trim()) missing.push('One on one coachings completed');
-    if (!form.fathomLink.trim()) missing.push('TL Fathom call recording tracker link');
     if (!form.ticketMonitoring.trim()) missing.push('Ticket monitoring completed');
     if (!hubspotFile) missing.push('Hubspot tasks screenshot');
     if (!attendanceFile) missing.push('TP App attendance screenshot');
@@ -75,7 +74,6 @@ export default function EODFormTab({ leads, currentUserName, showSuccessModal, t
         <textarea rows={3} placeholder="Total (e.g. 5/25), then Agent Name + Client Name + Purpose per line" value={form.coachings} onChange={(e) => update('coachings', e.target.value)}
           style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 6, padding: 8, fontSize: 13, fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', resize: 'vertical' }} />
       </div>
-      <div className="field"><label>TL Fathom call recording tracker link</label><input type="text" placeholder="https://..." value={form.fathomLink} onChange={(e) => update('fathomLink', e.target.value)} /></div>
       <div className="field">
         <label>Ticket monitoring completed</label>
         <textarea rows={3} placeholder="Agent Name + Client Name : Total, e.g. 3/5" value={form.ticketMonitoring} onChange={(e) => update('ticketMonitoring', e.target.value)}
