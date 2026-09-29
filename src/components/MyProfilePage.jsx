@@ -53,30 +53,27 @@ function VideoUpload({ targetName, isOwnProfile, showSuccessModal, toast }) {
   );
 }
 
-// A reels-style grid: every tile is the same fixed portrait shape, and the
-// video fills it edge to edge whatever its own orientation — landscape or
-// square source videos get their sides cropped, same as Instagram/YouTube
-// reels thumbnails. Uniform tiles matter more here than showing the whole
-// frame uncropped.
-const TILE_WIDTH = 180;
-const TILE_RATIO = 9 / 16;
+// Google Drive's /preview player fills whatever box its iframe is given —
+// it does not letterbox a mismatched box on its own. So the card itself is
+// just shaped like the video (its real captured ratio), nothing more: no
+// outer frame, no forced square, no cropping and no black bars, because
+// there's never a mismatch to crop or pad in the first place. Capped at a
+// sensible max width so a very wide or very tall video doesn't blow up the
+// page. Falls back to 16:9 for a video uploaded before dimensions were
+// tracked — that one needs a re-upload to size correctly.
+const VIDEO_MAX_WIDTH = 320;
 
 function VideoCard({ video }) {
+  const hasDims = video.width && video.height;
+  const ratio = hasDims ? video.width / video.height : 16 / 9;
+  const width = ratio >= 1 ? VIDEO_MAX_WIDTH : Math.round(VIDEO_MAX_WIDTH * ratio);
+
   return (
-    <div
-      style={{
-        width: TILE_WIDTH,
-        aspectRatio: String(TILE_RATIO),
-        border: '1px solid var(--line)',
-        borderRadius: 8,
-        overflow: 'hidden',
-        background: '#000',
-      }}
-    >
+    <div style={{ width }}>
       <iframe
         src={video.videoLink}
         title={video.fileName || 'Profile video'}
-        style={{ width: '100%', height: '100%', border: 'none' }}
+        style={{ width: '100%', aspectRatio: String(ratio), border: 'none', borderRadius: 8 }}
         allow="autoplay"
         allowFullScreen
       />
