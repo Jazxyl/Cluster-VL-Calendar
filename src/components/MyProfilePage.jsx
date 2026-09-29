@@ -58,11 +58,6 @@ function VideoCard({ video }) {
         allow="autoplay"
         allowFullScreen
       />
-      {video.fileName && (
-        <p style={{ fontSize: 11, color: 'var(--ink-soft)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {video.fileName}
-        </p>
-      )}
     </div>
   );
 }
