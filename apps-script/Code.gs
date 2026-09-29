@@ -299,13 +299,17 @@ function doPost(e) {
         data.description || ''
       ]);
     } else if (data.type === 'ProfileVideo') {
-      var teamLeadsSheetForVideo = getOrCreateSheet(ss, 'TeamLeads', ['Name']);
+      // Each upload is its own row (not a single column on TeamLeads) so a
+      // TL can build up a list of videos on their profile instead of every
+      // new upload replacing the last one.
+      var profileVideosSheet = getOrCreateSheet(ss, 'ProfileVideos', ['Timestamp', 'TL', 'VideoLink', 'FileName']);
       var videoUrl = saveVideo(data.video);
-      findAndUpdateRow(
-        teamLeadsSheetForVideo,
-        { 'Name': data.tl || '' },
-        { 'VideoLink': videoUrl }
-      );
+      profileVideosSheet.appendRow([
+        new Date(),
+        data.tl || '',
+        videoUrl,
+        (data.video && data.video.name) || ''
+      ]);
     } else if (data.type === 'EditNomination') {
       var nominationsSheetForEdit = ss.getSheetByName('TownHallNominations');
       findAndUpdateRow(

@@ -17,6 +17,7 @@ import {
   EMEMOS_TAB,
   EMEMO_CONFIRMATIONS_TAB,
   CLUSTER_LINKS_TAB,
+  PROFILE_VIDEOS_TAB,
   SHEET_ID,
   WEBHOOK_URL,
 } from './config.js';
@@ -109,6 +110,7 @@ function AppContent({ session, onSignOut }) {
   const [memos, setMemos] = useState([]);
   const [memoConfirmations, setMemoConfirmations] = useState([]);
   const [clusterLinks, setClusterLinks] = useState([]);
+  const [profileVideos, setProfileVideos] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -141,7 +143,7 @@ function AppContent({ session, onSignOut }) {
       safeFetchTab(TEAM_LEADS_TAB, 'Name').then((rows) => {
         const nextLeads = rows
           .filter((r) => r.Name && r.Name.trim())
-          .map((r, i) => ({ id: r.Name.trim(), name: r.Name.trim(), color: colorForIndex(i), photoLink: r.PhotoLink || '', videoLink: r.VideoLink || '' }));
+          .map((r, i) => ({ id: r.Name.trim(), name: r.Name.trim(), color: colorForIndex(i), photoLink: r.PhotoLink || '' }));
         setLeads(nextLeads);
       }),
       safeFetchTab(FILINGS_TAB, 'Timestamp').then((rows) => {
@@ -292,6 +294,13 @@ function AppContent({ session, onSignOut }) {
           rows
             .filter((r) => r.Name && r.URL)
             .map((r) => ({ name: r.Name.trim(), url: r.URL.trim(), description: r.Description || '' }))
+        );
+      }),
+      safeFetchTab(PROFILE_VIDEOS_TAB, 'Timestamp').then((rows) => {
+        setProfileVideos(
+          rows
+            .filter((r) => r.TL && r.VideoLink)
+            .map((r) => ({ tl: r.TL.trim(), videoLink: r.VideoLink.trim(), fileName: r.FileName || '', timestamp: r.Timestamp || '' }))
         );
       }),
     ];
@@ -698,6 +707,7 @@ function AppContent({ session, onSignOut }) {
             lead={viewedLead}
             email={viewedEmail}
             birthday={viewedBirthday}
+            videos={profileVideos.filter((v) => v.tl.toLowerCase() === (viewedLead?.name || '').toLowerCase())}
             isOwnProfile={!viewedLeadName}
             currentUserName={currentUserName}
             showSuccessModal={showSuccessModal}

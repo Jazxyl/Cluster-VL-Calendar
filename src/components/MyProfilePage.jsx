@@ -48,7 +48,26 @@ function VideoUpload({ currentUserName, showSuccessModal, toast }) {
   );
 }
 
-export default function MyProfilePage({ lead, email, birthday, isOwnProfile, currentUserName, showSuccessModal, toast }) {
+function VideoCard({ video }) {
+  return (
+    <div style={{ width: 220 }}>
+      <iframe
+        src={video.videoLink}
+        title={video.fileName || 'Profile video'}
+        style={{ width: '100%', aspectRatio: '9 / 16', border: '1px solid var(--line)', borderRadius: 8 }}
+        allow="autoplay"
+        allowFullScreen
+      />
+      {video.fileName && (
+        <p style={{ fontSize: 11, color: 'var(--ink-soft)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {video.fileName}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export default function MyProfilePage({ lead, email, birthday, videos, isOwnProfile, currentUserName, showSuccessModal, toast }) {
   if (!lead) {
     return (
       <div className="card home-section">
@@ -58,38 +77,41 @@ export default function MyProfilePage({ lead, email, birthday, isOwnProfile, cur
   }
 
   return (
-    <div className="card profile-card" style={{ maxWidth: 320, padding: 24 }}>
-      {lead.photoLink ? (
-        <img src={lead.photoLink} alt={lead.name} className="profile-photo" style={{ width: 96, height: 96 }} />
-      ) : (
-        <div
-          className="profile-photo profile-photo-fallback"
-          style={{ width: 96, height: 96, fontSize: 28, background: lead.color }}
-        >
-          {initials(lead.name)}
-        </div>
-      )}
-      <p className="profile-name" style={{ fontSize: 15, marginTop: 8 }}>
-        {lead.name}
-      </p>
-      <p className="profile-line">{email || 'No email on file'}</p>
-      <p className="profile-line">{birthday ? formatBirthdayDate(birthday.date) : 'No birthday on file'}</p>
+    <div>
+      <div className="card profile-card" style={{ maxWidth: 320, padding: 24 }}>
+        {lead.photoLink ? (
+          <img src={lead.photoLink} alt={lead.name} className="profile-photo" style={{ width: 96, height: 96 }} />
+        ) : (
+          <div
+            className="profile-photo profile-photo-fallback"
+            style={{ width: 96, height: 96, fontSize: 28, background: lead.color }}
+          >
+            {initials(lead.name)}
+          </div>
+        )}
+        <p className="profile-name" style={{ fontSize: 15, marginTop: 8 }}>
+          {lead.name}
+        </p>
+        <p className="profile-line">{email || 'No email on file'}</p>
+        <p className="profile-line">{birthday ? formatBirthdayDate(birthday.date) : 'No birthday on file'}</p>
+      </div>
 
-      {lead.videoLink && (
-        <div style={{ marginTop: 16 }}>
-          <iframe
-            src={lead.videoLink}
-            title={`${lead.name}'s video`}
-            style={{ width: '100%', aspectRatio: '16 / 9', border: 'none', borderRadius: 8 }}
-            allow="autoplay"
-            allowFullScreen
-          />
-        </div>
-      )}
+      <div style={{ marginTop: 20 }}>
+        <p className="home-section-title" style={{ marginBottom: 10 }}>
+          {isOwnProfile ? 'Your videos' : `${lead.name}'s videos`} {videos?.length ? `(${videos.length})` : ''}
+        </p>
+        {(!videos || videos.length === 0) ? (
+          <p className="empty-note">No videos yet.</p>
+        ) : (
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+            {videos.map((v, i) => <VideoCard key={i} video={v} />)}
+          </div>
+        )}
 
-      {isOwnProfile && (
-        <VideoUpload currentUserName={currentUserName} showSuccessModal={showSuccessModal} toast={toast} />
-      )}
+        {isOwnProfile && (
+          <VideoUpload currentUserName={currentUserName} showSuccessModal={showSuccessModal} toast={toast} />
+        )}
+      </div>
     </div>
   );
 }

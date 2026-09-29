@@ -22,6 +22,7 @@ export const COACHING_COMPLIANCE_TAB = 'CoachingCompliance';
 export const EMEMOS_TAB = 'EMemos';
 export const EMEMO_CONFIRMATIONS_TAB = 'EMemoConfirmations';
 export const CLUSTER_LINKS_TAB = 'ClusterLinks';
+export const PROFILE_VIDEOS_TAB = 'ProfileVideos';
 
 export function csvUrlForTab(tabName) {
   if (!SHEET_ID) return null;
