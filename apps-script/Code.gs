@@ -302,14 +302,16 @@ function doPost(e) {
       // Each upload is its own row (not a single column on TeamLeads) so a
       // TL can build up a list of videos on their profile instead of every
       // new upload replacing the last one.
-      var profileVideosSheet = getOrCreateSheet(ss, 'ProfileVideos', ['Timestamp', 'TL', 'VideoLink', 'FileName']);
+      var profileVideosSheet = getOrCreateSheet(ss, 'ProfileVideos', ['Timestamp', 'TL', 'VideoLink', 'FileName', 'Width', 'Height']);
       var videoUrl = saveVideo(data.video);
-      profileVideosSheet.appendRow([
-        new Date(),
-        data.tl || '',
-        videoUrl,
-        (data.video && data.video.name) || ''
-      ]);
+      appendRowByHeaders(profileVideosSheet, {
+        Timestamp: new Date(),
+        TL: data.tl || '',
+        VideoLink: videoUrl,
+        FileName: (data.video && data.video.name) || '',
+        Width: data.width || '',
+        Height: data.height || ''
+      });
     } else if (data.type === 'EditNomination') {
       var nominationsSheetForEdit = ss.getSheetByName('TownHallNominations');
       findAndUpdateRow(

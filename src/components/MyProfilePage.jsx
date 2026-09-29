@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { formatBirthdayDate } from '../lib/dates.js';
-import { fileToBase64, MAX_VIDEO_BYTES } from '../lib/files.js';
+import { fileToBase64, getVideoDimensions, MAX_VIDEO_BYTES } from '../lib/files.js';
 import { postToSheet, profileVideoPayload } from '../lib/webhook.js';
 
 function initials(fullName) {
@@ -20,8 +20,13 @@ function VideoUpload({ targetName, isOwnProfile, showSuccessModal, toast }) {
     setError('');
     setUploading(true);
     try {
-      const video = await fileToBase64(file, MAX_VIDEO_BYTES);
-      postToSheet(profileVideoPayload({ tl: targetName, video })).then((res) => {
+      const [video, dims] = await Promise.all([
+        fileToBase64(file, MAX_VIDEO_BYTES),
+        getVideoDimensions(file),
+      ]);
+      postToSheet(
+        profileVideoPayload({ tl: targetName, video, width: dims?.width, height: dims?.height })
+      ).then((res) => {
         if (!res.ok) toast("Upload didn't reach the sheet — check the webhook URL and try again");
       });
       setFile(null);
@@ -49,12 +54,22 @@ function VideoUpload({ targetName, isOwnProfile, showSuccessModal, toast }) {
 }
 
 function VideoCard({ video }) {
+  // Size the card to the video's own aspect ratio (captured at upload time)
+  // so Drive's embedded player never has to crop a mismatched container —
+  // e.g. a portrait phone video gets a tall narrow card instead of being
+  // squeezed into a fixed landscape box. Falls back to 16:9 for videos
+  // uploaded before this was tracked.
+  const hasDims = video.width && video.height;
+  const ratio = hasDims ? video.width / video.height : 16 / 9;
+  const isPortrait = ratio < 1;
+  const width = isPortrait ? 220 : 280;
+
   return (
-    <div style={{ width: 280 }}>
+    <div style={{ width }}>
       <iframe
         src={video.videoLink}
         title={video.fileName || 'Profile video'}
-        style={{ width: '100%', aspectRatio: '16 / 9', border: '1px solid var(--line)', borderRadius: 8 }}
+        style={{ width: '100%', aspectRatio: String(ratio), border: '1px solid var(--line)', borderRadius: 8 }}
         allow="autoplay"
         allowFullScreen
       />

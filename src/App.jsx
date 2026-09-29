@@ -300,7 +300,14 @@ function AppContent({ session, onSignOut }) {
         setProfileVideos(
           rows
             .filter((r) => r.TL && r.VideoLink)
-            .map((r) => ({ tl: r.TL.trim(), videoLink: r.VideoLink.trim(), fileName: r.FileName || '', timestamp: r.Timestamp || '' }))
+            .map((r) => ({
+              tl: r.TL.trim(),
+              videoLink: r.VideoLink.trim(),
+              fileName: r.FileName || '',
+              timestamp: r.Timestamp || '',
+              width: Number(r.Width) || 0,
+              height: Number(r.Height) || 0,
+            }))
         );
       }),
     ];

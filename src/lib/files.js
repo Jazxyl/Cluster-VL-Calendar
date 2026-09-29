@@ -20,3 +20,33 @@ export function fileToBase64(file, maxBytes = MAX_FILE_BYTES) {
     reader.readAsDataURL(file);
   });
 }
+
+// Reads a video file's real pixel dimensions before upload, so the profile
+// page can size each video's card to match its actual aspect ratio instead
+// of guessing (a portrait phone video forced into a landscape box, or vice
+// versa, gets visibly cropped by Drive's embedded player).
+export function getVideoDimensions(file) {
+  return new Promise((resolve) => {
+    if (!file) {
+      resolve(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const videoEl = document.createElement('video');
+    videoEl.preload = 'metadata';
+    videoEl.onloadedmetadata = () => {
+      const { videoWidth, videoHeight } = videoEl;
+      URL.revokeObjectURL(url);
+      if (videoWidth && videoHeight) {
+        resolve({ width: videoWidth, height: videoHeight });
+      } else {
+        resolve(null);
+      }
+    };
+    videoEl.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    videoEl.src = url;
+  });
+}

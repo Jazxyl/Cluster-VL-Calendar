@@ -171,11 +171,13 @@ export function addLinkPayload({ name, url, description }) {
   };
 }
 
-export function profileVideoPayload({ tl, video }) {
+export function profileVideoPayload({ tl, video, width, height }) {
   return {
     type: 'ProfileVideo',
     tl,
     video,
+    width: width || '',
+    height: height || '',
   };
 }
 
