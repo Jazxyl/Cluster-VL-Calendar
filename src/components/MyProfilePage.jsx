@@ -53,23 +53,38 @@ function VideoUpload({ targetName, isOwnProfile, showSuccessModal, toast }) {
   );
 }
 
+// Every card is the same fixed box, whatever the source video's orientation.
+const VIDEO_BOX_SIZE = 280;
+
 function VideoCard({ video }) {
-  // Size the card to the video's own aspect ratio (captured at upload time)
-  // so Drive's embedded player never has to crop a mismatched container —
-  // e.g. a portrait phone video gets a tall narrow card instead of being
-  // squeezed into a fixed landscape box. Falls back to 16:9 for videos
-  // uploaded before this was tracked.
+  // The video is scaled (in JS, with real pixel math) to fit inside the
+  // fixed box on its longest side, then centered — a letterbox, like a
+  // photo frame. This never crops: a portrait video gets black bars on the
+  // sides, a landscape one gets them on top and bottom. Falls back to 16:9
+  // for videos uploaded before dimensions were tracked.
   const hasDims = video.width && video.height;
   const ratio = hasDims ? video.width / video.height : 16 / 9;
-  const isPortrait = ratio < 1;
-  const width = isPortrait ? 220 : 280;
+  const frameWidth = ratio >= 1 ? VIDEO_BOX_SIZE : Math.round(VIDEO_BOX_SIZE * ratio);
+  const frameHeight = ratio >= 1 ? Math.round(VIDEO_BOX_SIZE / ratio) : VIDEO_BOX_SIZE;
 
   return (
-    <div style={{ width }}>
+    <div
+      style={{
+        width: VIDEO_BOX_SIZE,
+        height: VIDEO_BOX_SIZE,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#000',
+        border: '1px solid var(--line)',
+        borderRadius: 8,
+        overflow: 'hidden',
+      }}
+    >
       <iframe
         src={video.videoLink}
         title={video.fileName || 'Profile video'}
-        style={{ width: '100%', aspectRatio: String(ratio), border: '1px solid var(--line)', borderRadius: 8 }}
+        style={{ width: frameWidth, height: frameHeight, border: 'none' }}
         allow="autoplay"
         allowFullScreen
       />
