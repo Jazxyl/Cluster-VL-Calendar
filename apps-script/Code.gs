@@ -8,6 +8,7 @@
 // are visible even when Apps Script's own execution log doesn't show detail.
 
 var EOD_SCREENSHOT_FOLDER_NAME = 'Cluster Joe EOD Screenshots';
+var PROFILE_VIDEO_FOLDER_NAME = 'Cluster Joe Profile Videos';
 
 function getOrCreateFolder(name) {
   var folders = DriveApp.getFoldersByName(name);
@@ -85,6 +86,20 @@ function saveScreenshot(fileObj) {
   var file = folder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return file.getUrl();
+}
+
+// Same pattern as saveScreenshot, but in its own Drive folder and returning
+// a /preview URL (embeddable in an iframe) instead of the plain /view URL,
+// since a video needs to play inline on the profile page rather than open
+// as a static image link.
+function saveVideo(fileObj) {
+  if (!fileObj || !fileObj.data) return '';
+  var folder = getOrCreateFolder(PROFILE_VIDEO_FOLDER_NAME);
+  var bytes = Utilities.base64Decode(fileObj.data);
+  var blob = Utilities.newBlob(bytes, fileObj.mimeType || 'video/mp4', fileObj.name || 'video.mp4');
+  var file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return 'https://drive.google.com/file/d/' + file.getId() + '/preview';
 }
 
 function doGet(e) {
@@ -283,6 +298,14 @@ function doPost(e) {
         data.url || '',
         data.description || ''
       ]);
+    } else if (data.type === 'ProfileVideo') {
+      var teamLeadsSheetForVideo = getOrCreateSheet(ss, 'TeamLeads', ['Name']);
+      var videoUrl = saveVideo(data.video);
+      findAndUpdateRow(
+        teamLeadsSheetForVideo,
+        { 'Name': data.tl || '' },
+        { 'VideoLink': videoUrl }
+      );
     } else if (data.type === 'EditNomination') {
       var nominationsSheetForEdit = ss.getSheetByName('TownHallNominations');
       findAndUpdateRow(

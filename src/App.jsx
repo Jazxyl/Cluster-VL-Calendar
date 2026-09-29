@@ -88,6 +88,7 @@ function AppContent({ session, onSignOut }) {
   const [nav, setNav] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [ptoSubTab, setPtoSubTab] = useState('calendar');
+  const [viewedLeadName, setViewedLeadName] = useState(null);
 
   const [leads, setLeads] = useState([]);
   const [filings, setFilings] = useState([]);
@@ -140,7 +141,7 @@ function AppContent({ session, onSignOut }) {
       safeFetchTab(TEAM_LEADS_TAB, 'Name').then((rows) => {
         const nextLeads = rows
           .filter((r) => r.Name && r.Name.trim())
-          .map((r, i) => ({ id: r.Name.trim(), name: r.Name.trim(), color: colorForIndex(i), photoLink: r.PhotoLink || '' }));
+          .map((r, i) => ({ id: r.Name.trim(), name: r.Name.trim(), color: colorForIndex(i), photoLink: r.PhotoLink || '', videoLink: r.VideoLink || '' }));
         setLeads(nextLeads);
       }),
       safeFetchTab(FILINGS_TAB, 'Timestamp').then((rows) => {
@@ -317,6 +318,14 @@ function AppContent({ session, onSignOut }) {
   const currentEmail = userEmails[(currentUserName || '').toLowerCase()] || '';
   const currentBirthday =
     birthdays.find((b) => b.name.toLowerCase().trim() === (currentUserName || '').toLowerCase().trim()) || null;
+
+  const viewedLead = viewedLeadName
+    ? leads.find((l) => l.name.toLowerCase() === viewedLeadName.toLowerCase()) || null
+    : currentLead;
+  const viewedEmail = viewedLeadName ? userEmails[viewedLeadName.toLowerCase()] || '' : currentEmail;
+  const viewedBirthday = viewedLeadName
+    ? birthdays.find((b) => b.name.toLowerCase().trim() === viewedLeadName.toLowerCase().trim()) || null
+    : currentBirthday;
   const rosterAgentsRaw = aprs.filter(
     (a) => (a.tl || '').toLowerCase().trim() === (currentUserName || '').toLowerCase().trim()
   );
@@ -500,7 +509,7 @@ function AppContent({ session, onSignOut }) {
         onClose={() => setSidebarOpen(false)}
         session={session}
         currentLead={currentLead}
-        onGoToProfile={() => setNav('myprofile')}
+        onGoToProfile={() => { setViewedLeadName(null); setNav('myprofile'); }}
         onGoToRoster={() => setNav('myroster')}
         onSignOut={onSignOut}
       />
@@ -676,9 +685,24 @@ function AppContent({ session, onSignOut }) {
             showSuccessModal={showSuccessModal}
           />
         )}
-        {nav === 'profiles' && <ProfilesTab leads={leads} userEmails={userEmails} birthdays={birthdays} />}
+        {nav === 'profiles' && (
+          <ProfilesTab
+            leads={leads}
+            userEmails={userEmails}
+            birthdays={birthdays}
+            onSelectLead={(name) => { setViewedLeadName(name); setNav('myprofile'); }}
+          />
+        )}
         {nav === 'myprofile' && (
-          <MyProfilePage lead={currentLead} email={currentEmail} birthday={currentBirthday} />
+          <MyProfilePage
+            lead={viewedLead}
+            email={viewedEmail}
+            birthday={viewedBirthday}
+            isOwnProfile={!viewedLeadName}
+            currentUserName={currentUserName}
+            showSuccessModal={showSuccessModal}
+            toast={toast}
+          />
         )}
         {nav === 'myroster' && (
           <MyRosterPage

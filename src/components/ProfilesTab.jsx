@@ -8,12 +8,19 @@ function initials(fullName) {
   return (first + last).toUpperCase();
 }
 
-function ProfileCard({ lead, email, birthday }) {
+function ProfileCard({ lead, email, birthday, onSelect }) {
   const [imgFailed, setImgFailed] = useState(false);
   const showPhoto = lead.photoLink && !imgFailed;
 
   return (
-    <div className="card profile-card">
+    <div
+      className="card profile-card"
+      onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(); }}
+      style={{ cursor: 'pointer' }}
+    >
       {showPhoto ? (
         <img
           src={lead.photoLink}
@@ -33,7 +40,7 @@ function ProfileCard({ lead, email, birthday }) {
   );
 }
 
-export default function ProfilesTab({ leads, userEmails, birthdays }) {
+export default function ProfilesTab({ leads, userEmails, birthdays, onSelectLead }) {
   if (leads.length === 0) {
     return (
       <div className="card home-section">
@@ -45,10 +52,17 @@ export default function ProfilesTab({ leads, userEmails, birthdays }) {
   return (
     <div className="profiles-grid">
       {leads.map((l) => {
-        const firstNameKey = l.name.trim().split(' ')[0].toLowerCase();
-        const email = userEmails?.[firstNameKey] || '';
+        const email = userEmails?.[l.name.trim().toLowerCase()] || '';
         const birthday = birthdays.find((b) => b.name.toLowerCase().trim() === l.name.toLowerCase().trim());
-        return <ProfileCard key={l.id} lead={l} email={email} birthday={birthday} />;
+        return (
+          <ProfileCard
+            key={l.id}
+            lead={l}
+            email={email}
+            birthday={birthday}
+            onSelect={() => onSelectLead?.(l.name)}
+          />
+        );
       })}
     </div>
   );

@@ -171,6 +171,14 @@ export function addLinkPayload({ name, url, description }) {
   };
 }
 
+export function profileVideoPayload({ tl, video }) {
+  return {
+    type: 'ProfileVideo',
+    tl,
+    video,
+  };
+}
+
 export function editNominationPayload({ tl, month, agent, client, reason, recordingLink }) {
   return {
     type: 'EditNomination',
