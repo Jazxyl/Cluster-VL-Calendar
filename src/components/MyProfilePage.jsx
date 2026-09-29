@@ -53,35 +53,107 @@ function VideoUpload({ targetName, isOwnProfile, showSuccessModal, toast }) {
   );
 }
 
-// Google Drive's /preview player fills whatever box its iframe is given —
-// it does not letterbox a mismatched box on its own. So the card itself is
-// just shaped like the video (its real captured ratio), nothing more: no
-// outer frame, no forced square, no cropping and no black bars, because
-// there's never a mismatch to crop or pad in the first place. Capped at a
-// sensible max width so a very wide or very tall video doesn't blow up the
-// page. Falls back to 16:9 for a video uploaded before dimensions were
-// tracked — that one needs a re-upload to size correctly.
-const VIDEO_MAX_WIDTH = 320;
+// Browsing and playback are two different jobs, so they get two different
+// sizes. The grid tile is a small, uniform square — it's just there to be
+// clicked, so it's fine if a non-square video gets cropped in it, the same
+// way a YouTube or Drive file-list thumbnail crops. The iframe itself is
+// given pointer-events: none so clicks always reach the tile underneath
+// instead of Drive's own player controls.
+const THUMB_SIZE = 140;
 
-function VideoCard({ video }) {
-  const hasDims = video.width && video.height;
-  const ratio = hasDims ? video.width / video.height : 16 / 9;
-  const width = ratio >= 1 ? VIDEO_MAX_WIDTH : Math.round(VIDEO_MAX_WIDTH * ratio);
-
+function VideoThumbnail({ video, onOpen }) {
   return (
-    <div style={{ width }}>
+    <div
+      onClick={() => onOpen(video)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') onOpen(video);
+      }}
+      style={{
+        width: THUMB_SIZE,
+        height: THUMB_SIZE,
+        border: '1px solid var(--line)',
+        borderRadius: 8,
+        overflow: 'hidden',
+        background: '#000',
+        cursor: 'pointer',
+      }}
+    >
       <iframe
         src={video.videoLink}
         title={video.fileName || 'Profile video'}
-        style={{ width: '100%', aspectRatio: String(ratio), border: 'none', borderRadius: 8 }}
-        allow="autoplay"
-        allowFullScreen
+        style={{ width: '100%', height: '100%', border: 'none', pointerEvents: 'none' }}
+        tabIndex={-1}
       />
     </div>
   );
 }
 
+// The modal is where playback actually happens, so it's the one place the
+// video is shown at its real captured ratio — full video visible, no crop,
+// no letterbox bars needed because the box is shaped to match it exactly.
+// Capped to fit comfortably inside the viewport. Falls back to 16:9 for a
+// video uploaded before dimensions were tracked.
+function VideoModal({ video, onClose }) {
+  if (!video) return null;
+  const hasDims = video.width && video.height;
+  const ratio = hasDims ? video.width / video.height : 16 / 9;
+  const maxWidth = Math.min(640, window.innerWidth - 48);
+  const maxHeight = window.innerHeight - 96;
+  let width = maxWidth;
+  let height = width / ratio;
+  if (height > maxHeight) {
+    height = maxHeight;
+    width = height * ratio;
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.75)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+      }}
+    >
+      <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          style={{
+            position: 'absolute',
+            top: -36,
+            right: 0,
+            background: 'transparent',
+            border: 'none',
+            color: '#fff',
+            fontSize: 22,
+            cursor: 'pointer',
+            lineHeight: 1,
+          }}
+        >
+          ✕
+        </button>
+        <iframe
+          src={video.videoLink}
+          title={video.fileName || 'Profile video'}
+          style={{ width, height, border: 'none', borderRadius: 8 }}
+          allow="autoplay"
+          allowFullScreen
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function MyProfilePage({ lead, email, birthday, videos, isOwnProfile, isAdmin, showSuccessModal, toast }) {
+  const [openVideo, setOpenVideo] = useState(null);
+
   if (!lead) {
     return (
       <div className="card home-section">
@@ -118,7 +190,7 @@ export default function MyProfilePage({ lead, email, birthday, videos, isOwnProf
           <p className="empty-note">No videos yet.</p>
         ) : (
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-            {videos.map((v, i) => <VideoCard key={i} video={v} />)}
+            {videos.map((v, i) => <VideoThumbnail key={i} video={v} onOpen={setOpenVideo} />)}
           </div>
         )}
 
@@ -126,6 +198,8 @@ export default function MyProfilePage({ lead, email, birthday, videos, isOwnProf
           <VideoUpload targetName={lead.name} isOwnProfile={isOwnProfile} showSuccessModal={showSuccessModal} toast={toast} />
         )}
       </div>
+
+      <VideoModal video={openVideo} onClose={() => setOpenVideo(null)} />
     </div>
   );
 }
