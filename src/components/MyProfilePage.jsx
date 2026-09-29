@@ -53,38 +53,30 @@ function VideoUpload({ targetName, isOwnProfile, showSuccessModal, toast }) {
   );
 }
 
-// Every card is the same fixed box, whatever the source video's orientation.
-const VIDEO_BOX_SIZE = 280;
+// A reels-style grid: every tile is the same fixed portrait shape, and the
+// video fills it edge to edge whatever its own orientation — landscape or
+// square source videos get their sides cropped, same as Instagram/YouTube
+// reels thumbnails. Uniform tiles matter more here than showing the whole
+// frame uncropped.
+const TILE_WIDTH = 180;
+const TILE_RATIO = 9 / 16;
 
 function VideoCard({ video }) {
-  // The video is scaled (in JS, with real pixel math) to fit inside the
-  // fixed box on its longest side, then centered — a letterbox, like a
-  // photo frame. This never crops: a portrait video gets black bars on the
-  // sides, a landscape one gets them on top and bottom. Falls back to 16:9
-  // for videos uploaded before dimensions were tracked.
-  const hasDims = video.width && video.height;
-  const ratio = hasDims ? video.width / video.height : 16 / 9;
-  const frameWidth = ratio >= 1 ? VIDEO_BOX_SIZE : Math.round(VIDEO_BOX_SIZE * ratio);
-  const frameHeight = ratio >= 1 ? Math.round(VIDEO_BOX_SIZE / ratio) : VIDEO_BOX_SIZE;
-
   return (
     <div
       style={{
-        width: VIDEO_BOX_SIZE,
-        height: VIDEO_BOX_SIZE,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#000',
+        width: TILE_WIDTH,
+        aspectRatio: String(TILE_RATIO),
         border: '1px solid var(--line)',
         borderRadius: 8,
         overflow: 'hidden',
+        background: '#000',
       }}
     >
       <iframe
         src={video.videoLink}
         title={video.fileName || 'Profile video'}
-        style={{ width: frameWidth, height: frameHeight, border: 'none' }}
+        style={{ width: '100%', height: '100%', border: 'none' }}
         allow="autoplay"
         allowFullScreen
       />
