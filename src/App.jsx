@@ -709,7 +709,7 @@ function AppContent({ session, onSignOut }) {
             birthday={viewedBirthday}
             videos={profileVideos.filter((v) => v.tl.toLowerCase() === (viewedLead?.name || '').toLowerCase())}
             isOwnProfile={!viewedLeadName}
-            currentUserName={currentUserName}
+            isAdmin={isAdmin}
             showSuccessModal={showSuccessModal}
             toast={toast}
           />

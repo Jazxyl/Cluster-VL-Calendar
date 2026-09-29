@@ -10,7 +10,7 @@ function initials(fullName) {
   return (first + last).toUpperCase();
 }
 
-function VideoUpload({ currentUserName, showSuccessModal, toast }) {
+function VideoUpload({ targetName, isOwnProfile, showSuccessModal, toast }) {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -21,7 +21,7 @@ function VideoUpload({ currentUserName, showSuccessModal, toast }) {
     setUploading(true);
     try {
       const video = await fileToBase64(file, MAX_VIDEO_BYTES);
-      postToSheet(profileVideoPayload({ tl: currentUserName, video })).then((res) => {
+      postToSheet(profileVideoPayload({ tl: targetName, video })).then((res) => {
         if (!res.ok) toast("Upload didn't reach the sheet — check the webhook URL and try again");
       });
       setFile(null);
@@ -35,7 +35,7 @@ function VideoUpload({ currentUserName, showSuccessModal, toast }) {
   return (
     <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
       <p style={{ fontSize: 12, color: 'var(--ink-soft)', marginBottom: 8 }}>
-        Add a video to your profile (max {Math.round(MAX_VIDEO_BYTES / (1024 * 1024))} MB)
+        {isOwnProfile ? 'Add a video to your profile' : `Add a video to ${targetName}'s profile`} (max {Math.round(MAX_VIDEO_BYTES / (1024 * 1024))} MB)
       </p>
       <input type="file" accept="video/*" onChange={(e) => setFile(e.target.files[0] || null)} style={{ fontSize: 12 }} />
       <div style={{ marginTop: 8 }}>
@@ -62,7 +62,7 @@ function VideoCard({ video }) {
   );
 }
 
-export default function MyProfilePage({ lead, email, birthday, videos, isOwnProfile, currentUserName, showSuccessModal, toast }) {
+export default function MyProfilePage({ lead, email, birthday, videos, isOwnProfile, isAdmin, showSuccessModal, toast }) {
   if (!lead) {
     return (
       <div className="card home-section">
@@ -103,8 +103,8 @@ export default function MyProfilePage({ lead, email, birthday, videos, isOwnProf
           </div>
         )}
 
-        {isOwnProfile && (
-          <VideoUpload currentUserName={currentUserName} showSuccessModal={showSuccessModal} toast={toast} />
+        {(isOwnProfile || isAdmin) && (
+          <VideoUpload targetName={lead.name} isOwnProfile={isOwnProfile} showSuccessModal={showSuccessModal} toast={toast} />
         )}
       </div>
     </div>
