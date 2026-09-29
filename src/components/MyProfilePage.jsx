@@ -50,11 +50,11 @@ function VideoUpload({ targetName, isOwnProfile, showSuccessModal, toast }) {
 
 function VideoCard({ video }) {
   return (
-    <div style={{ width: 220 }}>
+    <div style={{ width: 280 }}>
       <iframe
         src={video.videoLink}
         title={video.fileName || 'Profile video'}
-        style={{ width: '100%', aspectRatio: '9 / 16', border: '1px solid var(--line)', borderRadius: 8 }}
+        style={{ width: '100%', aspectRatio: '16 / 9', border: '1px solid var(--line)', borderRadius: 8 }}
         allow="autoplay"
         allowFullScreen
       />
