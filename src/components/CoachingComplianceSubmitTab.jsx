@@ -1,14 +1,29 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 const COACHING_TYPES = ['KPI Coaching', 'Behavior', 'Attendance'];
 
-export default function CoachingComplianceSubmitTab({ leads, currentUserName, onSubmit, showSuccessModal }) {
+export default function CoachingComplianceSubmitTab({ leads, agents, currentUserName, onSubmit, showSuccessModal }) {
   const [tlName, setTlName] = useState(currentUserName || leads?.[0]?.name || '');
   const [agent, setAgent] = useState('');
+  const [useRoster, setUseRoster] = useState(true);
   const [type, setType] = useState('KPI Coaching');
   const [fathomLink, setFathomLink] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
+
+  // The TL's roster, scoped to whichever TL is currently selected above —
+  // not just the logged-in user, since an admin can log coaching for any TL.
+  const rosterForTL = useMemo(() => {
+    const raw = (agents || []).filter(
+      (a) => (a.tl || '').toLowerCase().trim() === (tlName || '').toLowerCase().trim()
+    );
+    return Array.from(new Map(raw.map((a) => [a.name.toLowerCase().trim(), a])).values());
+  }, [agents, tlName]);
+
+  // Switching TL invalidates whatever agent was picked from the old roster.
+  useEffect(() => {
+    setAgent('');
+  }, [tlName]);
 
   async function handleSubmit() {
     if (!tlName || !agent.trim() || !fathomLink.trim()) {
@@ -51,8 +66,41 @@ export default function CoachingComplianceSubmitTab({ leads, currentUserName, on
       </div>
 
       <div className="field">
-        <label>Agent name</label>
-        <input type="text" placeholder="Which agent" value={agent} onChange={(e) => setAgent(e.target.value)} />
+        <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <span>Agent name</span>
+          {rosterForTL.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setUseRoster((v) => !v);
+                setAgent('');
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--ink-soft)',
+                fontSize: 11,
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              {useRoster ? 'Type name instead' : 'Pick from roster instead'}
+            </button>
+          )}
+        </label>
+        {useRoster && rosterForTL.length > 0 ? (
+          <select value={agent} onChange={(e) => setAgent(e.target.value)}>
+            <option value="">Select an agent</option>
+            {rosterForTL.map((a) => (
+              <option key={a.name} value={a.name}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input type="text" placeholder="Which agent" value={agent} onChange={(e) => setAgent(e.target.value)} />
+        )}
       </div>
 
       <div className="field">

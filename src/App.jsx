@@ -662,6 +662,7 @@ function AppContent({ session, onSignOut }) {
         {nav === 'coaching' && (
           <CoachingComplianceTab
             leads={leads}
+            agents={aprs}
             entries={coachingEntries}
             isAdmin={isAdmin}
             currentUserName={currentUserName}

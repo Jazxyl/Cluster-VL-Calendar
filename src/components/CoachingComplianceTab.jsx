@@ -2,7 +2,7 @@ import { useState } from 'react';
 import CoachingComplianceSubmitTab from './CoachingComplianceSubmitTab.jsx';
 import CoachingComplianceStatusTab from './CoachingComplianceStatusTab.jsx';
 
-export default function CoachingComplianceTab({ leads, entries, isAdmin, currentUserName, onSubmit, showSuccessModal }) {
+export default function CoachingComplianceTab({ leads, agents, entries, isAdmin, currentUserName, onSubmit, showSuccessModal }) {
   const [subTab, setSubTab] = useState('submit');
 
   return (
@@ -19,6 +19,7 @@ export default function CoachingComplianceTab({ leads, entries, isAdmin, current
         {subTab === 'submit' && (
           <CoachingComplianceSubmitTab
             leads={leads}
+            agents={agents}
             currentUserName={currentUserName}
             onSubmit={onSubmit}
             showSuccessModal={showSuccessModal}
