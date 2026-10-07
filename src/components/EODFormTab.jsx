@@ -8,7 +8,6 @@ const EMPTY_FORM = {
   date: todayPST(),
   clientCalls: '',
   coachings: '',
-  fathomLink: '',
   ticketMonitoring: '',
 };
 
@@ -43,7 +42,6 @@ export default function EODFormTab({ leads, currentUserName, showSuccessModal, t
     if (!form.date) missing.push('Date');
     if (!form.clientCalls.trim()) missing.push('Client-related calls attended');
     if (!form.coachings.trim()) missing.push('One on one coachings completed');
-    if (!form.fathomLink.trim()) missing.push('TL Fathom call recording tracker link');
     if (!form.ticketMonitoring.trim()) missing.push('Ticket monitoring completed');
     if (!hubspotFile) missing.push('Hubspot tasks screenshot');
     if (!attendanceFile) missing.push('TP App attendance screenshot');
@@ -126,16 +124,6 @@ export default function EODFormTab({ leads, currentUserName, showSuccessModal, t
           value={form.coachings}
           onChange={(e) => update('coachings', e.target.value)}
           style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 6, padding: 8, fontSize: 13, fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', resize: 'vertical' }}
-        />
-      </div>
-
-      <div className="field">
-        <label>TL Fathom call recording tracker link</label>
-        <input
-          type="text"
-          placeholder="https://..."
-          value={form.fathomLink}
-          onChange={(e) => update('fathomLink', e.target.value)}
         />
       </div>
 
