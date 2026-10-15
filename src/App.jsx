@@ -255,6 +255,7 @@ function AppContent({ session, onSignOut }) {
               originalTimestamp: r.OriginalTimestamp.trim(),
               processedBy: r.ProcessedBy || '',
               notes: r.Notes || '',
+              status: (r.Status || '').trim(),
             }))
         );
       }),
@@ -426,8 +427,8 @@ function AppContent({ session, onSignOut }) {
     return { ok: true };
   }
 
-  function processExpansionBonus({ originalTimestamp, notes }) {
-    const record = { originalTimestamp, processedBy: currentUserName, notes };
+  function processExpansionBonus({ originalTimestamp, notes, status }) {
+    const record = { originalTimestamp, processedBy: currentUserName, notes, status: status || 'Approved' };
     setExpansionBonusCompletions((prev) => [record, ...prev]);
     postToSheet(expansionBonusCompletionPayload(record)).then((res) => {
       if (!res.ok) toast('Marked locally, but the sheet write failed — check the webhook URL');

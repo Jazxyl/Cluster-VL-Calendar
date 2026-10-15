@@ -158,8 +158,60 @@ function getMeetingsJson() {
   }
 }
 
+// Every tab's Timestamp is written as a real date, which the sheet displays in
+// its own time zone. Pinning that setting here keeps all tabs on Pacific time
+// no matter who edits the spreadsheet settings.
+function ensurePacificTimeZone(ss) {
+  if (ss.getSpreadsheetTimeZone() !== APP_TIMEZONE) {
+    ss.setSpreadsheetTimeZone(APP_TIMEZONE);
+  }
+}
+
+// ONE-TIME: run this once from the Apps Script editor (select it in the
+// function dropdown, then Run). It moves every existing Timestamp that was
+// saved on Manila time back to Pacific time (15 hours earlier while daylight
+// saving applies, which covers every date before Nov 1, 2026). It only touches
+// real date cells in columns headed "Timestamp", so text timestamps such as
+// ExpansionBonus are left alone, and it refuses to run twice.
+function shiftManilaTimestampsToPacific() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('manilaToPacificDone')) {
+    Logger.log('Already done. Nothing changed.');
+    return;
+  }
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var SHIFT_MS = 15 * 60 * 60 * 1000;
+  var cutoff = new Date(); // rows written from now on are already Pacific
+  var report = [];
+  ss.getSheets().forEach(function (sheet) {
+    var lastRow = sheet.getLastRow();
+    var lastCol = sheet.getLastColumn();
+    if (lastRow < 2 || lastCol < 1) return;
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    var col = headers.indexOf('Timestamp') + 1;
+    if (col < 1) return;
+    var range = sheet.getRange(2, col, lastRow - 1, 1);
+    var values = range.getValues();
+    var changed = 0;
+    var out = values.map(function (r) {
+      var v = r[0];
+      if (v instanceof Date && v.getTime() < cutoff.getTime()) {
+        changed++;
+        return [new Date(v.getTime() - SHIFT_MS)];
+      }
+      return [v];
+    });
+    if (changed) range.setValues(out);
+    report.push(sheet.getName() + ': ' + changed);
+  });
+  ensurePacificTimeZone(ss);
+  props.setProperty('manilaToPacificDone', new Date().toISOString());
+  Logger.log('Shifted rows per tab -> ' + report.join(', '));
+}
+
 function doPost(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ensurePacificTimeZone(ss);
   try {
     var data = JSON.parse(e.postData.contents);
 
@@ -236,13 +288,14 @@ function doPost(e) {
         data.hubspotLink || ''
       ]);
     } else if (data.type === 'ExpansionBonusCompletion') {
-      var ebCompletionsSheet = getOrCreateSheet(ss, 'ExpansionBonusCompletions', ['Timestamp', 'OriginalTimestamp', 'ProcessedBy', 'Notes']);
-      ebCompletionsSheet.appendRow([
-        new Date(),
-        data.originalTimestamp || '',
-        data.processedBy || '',
-        data.notes || ''
-      ]);
+      var ebCompletionsSheet = getOrCreateSheet(ss, 'ExpansionBonusCompletions', ['Timestamp', 'OriginalTimestamp', 'ProcessedBy', 'Notes', 'Status']);
+      appendRowByHeaders(ebCompletionsSheet, {
+        Timestamp: new Date(),
+        OriginalTimestamp: data.originalTimestamp || '',
+        ProcessedBy: data.processedBy || '',
+        Notes: data.notes || '',
+        Status: data.status || 'Approved'
+      });
     } else if (data.type === 'CoachingCompliance') {
       var coachingSheet = getOrCreateSheet(ss, 'CoachingCompliance', ['Timestamp', 'TL', 'Agent', 'Type', 'FathomLink']);
       coachingSheet.appendRow([

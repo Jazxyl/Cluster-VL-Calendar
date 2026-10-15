@@ -15,10 +15,10 @@ function ProcessRow({ entry, onProcess }) {
     if (!e.target.checked) setNotes('');
   }
 
-  function handleSubmit() {
+  function handleSubmit(status) {
     if (!notes.trim()) return;
     setSubmitting(true);
-    onProcess({ originalTimestamp: entry.timestamp, notes: notes.trim() });
+    onProcess({ originalTimestamp: entry.timestamp, notes: notes.trim(), status });
   }
 
   return (
@@ -41,8 +41,11 @@ function ProcessRow({ entry, onProcess }) {
             onChange={(e) => setNotes(e.target.value)}
             style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 6, padding: '6px 8px', fontSize: 12, fontFamily: 'Inter, sans-serif' }}
           />
-          <button className="primary" onClick={handleSubmit} disabled={submitting || !notes.trim()}>
+          <button className="primary" onClick={() => handleSubmit('Approved')} disabled={submitting || !notes.trim()}>
             {submitting ? 'Saving…' : 'Approve'}
+          </button>
+          <button onClick={() => handleSubmit('Denied')} disabled={submitting || !notes.trim()}>
+            Decline
           </button>
         </div>
       )}
@@ -89,10 +92,11 @@ export default function ExpansionBonusStatusTab({ entries, completions, isAdmin,
             .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
             .map((e, i) => {
               const completion = findCompletion(completions, e.timestamp);
+              const declined = completion && /^(denied|declined)$/i.test((completion.status || '').trim());
               return (
                 <div className="hist-row" key={i}>
-                  <span className={`badge ${completion ? 'approved' : 'rejected'}`}>
-                    {completion ? 'Approved' : 'Pending'}
+                  <span className={`badge ${completion && !declined ? 'approved' : 'rejected'}`}>
+                    {completion ? (declined ? 'Declined' : 'Approved') : 'Pending'}
                   </span>
                   <span className="who">
                     {e.agent} · {e.client}

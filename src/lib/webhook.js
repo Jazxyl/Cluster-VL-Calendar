@@ -94,12 +94,13 @@ export function expansionBonusPayload({ timestamp, tl, agent, client, startDate,
   };
 }
 
-export function expansionBonusCompletionPayload({ originalTimestamp, processedBy, notes }) {
+export function expansionBonusCompletionPayload({ originalTimestamp, processedBy, notes, status }) {
   return {
     type: 'ExpansionBonusCompletion',
     originalTimestamp,
     processedBy,
     notes,
+    status: status || 'Approved',
   };
 }
 
