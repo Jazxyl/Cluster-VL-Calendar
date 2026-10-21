@@ -66,6 +66,15 @@ export function eowrPayload({ tl, weekStart, sheetLink }) {
   };
 }
 
+export function nominationSettingPayload({ value, month, updatedBy }) {
+  return {
+    type: 'NominationSetting',
+    value,
+    month,
+    updatedBy,
+  };
+}
+
 export function nominationPayload({ tl, agent, client, reason, month, recordingLink }) {
   return {
     type: 'TownHallNomination',

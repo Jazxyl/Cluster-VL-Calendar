@@ -365,6 +365,24 @@ function doPost(e) {
         Width: data.width || '',
         Height: data.height || ''
       });
+    } else if (data.type === 'NominationSetting') {
+      // One row, keyed by "NominationsOverride": updated in place so the sheet
+      // always holds just the current override (value: open, closed or blank).
+      var settingsSheet = getOrCreateSheet(ss, 'Settings', ['Key', 'Value', 'Month', 'UpdatedBy', 'UpdatedAt']);
+      var settingsData = settingsSheet.getDataRange().getValues();
+      var settingsHeaders = settingsData[0];
+      var keyCol = settingsHeaders.indexOf('Key');
+      var settingRow = -1;
+      for (var si = 1; si < settingsData.length; si++) {
+        if (String(settingsData[si][keyCol]).trim() === 'NominationsOverride') { settingRow = si + 1; break; }
+      }
+      var settingValues = { Value: data.value || '', Month: data.month || '', UpdatedBy: data.updatedBy || '', UpdatedAt: new Date() };
+      if (settingRow === -1) {
+        settingValues.Key = 'NominationsOverride';
+        appendRowByHeaders(settingsSheet, settingValues);
+      } else {
+        findAndUpdateRow(settingsSheet, { 'Key': 'NominationsOverride' }, settingValues);
+      }
     } else if (data.type === 'EditNomination') {
       var nominationsSheetForEdit = ss.getSheetByName('TownHallNominations');
       findAndUpdateRow(

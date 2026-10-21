@@ -18,6 +18,7 @@ import {
   EMEMO_CONFIRMATIONS_TAB,
   CLUSTER_LINKS_TAB,
   PROFILE_VIDEOS_TAB,
+  SETTINGS_TAB,
   SHEET_ID,
   WEBHOOK_URL,
 } from './config.js';
@@ -29,6 +30,7 @@ import {
   aprCompletionPayload,
   eowrPayload,
   nominationPayload,
+  nominationSettingPayload,
   expansionBonusPayload,
   expansionBonusCompletionPayload,
   coachingCompliancePayload,
@@ -40,7 +42,7 @@ import {
   addLinkPayload,
   editNominationPayload,
 } from './lib/webhook.js';
-import { evaluateFiling, todayPST, rangesOverlap, parseUSDate } from './lib/dates.js';
+import { evaluateFiling, todayPST, rangesOverlap, parseUSDate, currentMonthKey, activeNominationOverride } from './lib/dates.js';
 import { colorForIndex } from './lib/colors.js';
 import NavCards from './components/NavCards.jsx';
 import HomeTab from './components/HomeTab.jsx';
@@ -103,6 +105,7 @@ function AppContent({ session, onSignOut }) {
   const [eowrEntries, setEowrEntries] = useState([]);
   const [adminNames, setAdminNames] = useState(new Set());
   const [nominations, setNominations] = useState([]);
+  const [nominationOverride, setNominationOverride] = useState({ value: '', month: '' });
   const [userEmails, setUserEmails] = useState({});
   const [expansionBonuses, setExpansionBonuses] = useState([]);
   const [expansionBonusCompletions, setExpansionBonusCompletions] = useState([]);
@@ -231,6 +234,14 @@ function AppContent({ session, onSignOut }) {
               month: r.Month.trim(),
               recordingLink: r.RecordingLink || '',
             }))
+        );
+      }),
+      safeFetchTab(SETTINGS_TAB, 'Key').then((rows) => {
+        const row = rows.find((r) => (r.Key || '').trim() === 'NominationsOverride');
+        setNominationOverride(
+          row
+            ? { value: (row.Value || '').trim().toLowerCase(), month: (row.Month || '').trim() }
+            : { value: '', month: '' }
         );
       }),
       safeFetchTab(EXPANSION_BONUS_TAB, 'Timestamp').then((rows) => {
@@ -416,6 +427,15 @@ function AppContent({ session, onSignOut }) {
       if (!res.ok) toast('Submitted locally, but the sheet write failed — check the webhook URL');
     });
     return { ok: true };
+  }
+
+  // value: 'open' | 'closed' | '' (back to the normal 1st-16th schedule).
+  function setNominationsOverride(value) {
+    const month = currentMonthKey();
+    setNominationOverride({ value, month });
+    postToSheet(nominationSettingPayload({ value, month, updatedBy: currentUserName })).then((res) => {
+      if (!res.ok) toast('Changed locally, but the sheet write failed — check the webhook URL');
+    });
   }
 
   function submitExpansionBonus({ timestamp, tl, agent, client, startDate, hubspotLink }) {
@@ -657,6 +677,8 @@ function AppContent({ session, onSignOut }) {
             currentUserName={currentUserName}
             onSubmit={submitNomination}
             onEditNomination={editNomination}
+            nominationOverride={activeNominationOverride(nominationOverride)}
+            onSetNominationOverride={setNominationsOverride}
             showSuccessModal={showSuccessModal}
           />
         )}

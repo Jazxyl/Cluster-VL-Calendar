@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { todayPST, isNominationWindowOpen, currentMonthKey } from '../lib/dates.js';
+import { todayPST, currentMonthKey } from '../lib/dates.js';
 
-export default function NominationSubmitTab({ leads, currentUserName, nominations, onSubmit, showSuccessModal }) {
+export default function NominationSubmitTab({ leads, currentUserName, nominations, windowOpen, overrideClosed, onSubmit, showSuccessModal }) {
   const todayStr = todayPST();
-  const windowOpen = isNominationWindowOpen(todayStr);
   const thisMonth = currentMonthKey(todayStr);
 
   const [tlName, setTlName] = useState(currentUserName || leads?.[0]?.name || '');
@@ -19,8 +18,9 @@ export default function NominationSubmitTab({ leads, currentUserName, nomination
       <div className="card" style={{ padding: 20 }}>
         <h3 className="panel-title">Town Hall Nomination</h3>
         <p className="empty-note">
-          You've missed this month's submission window. Nominations are open from the 1st through the 16th
-          of each month — this reopens next month.
+          {overrideClosed
+            ? "Nominations are closed for now. An admin will let you know if they reopen."
+            : "You've missed this month's submission window. Nominations are open from the 1st through the 16th of each month, and this reopens next month. An admin can reopen it if needed."}
         </p>
       </div>
     );

@@ -267,6 +267,21 @@ export function isNominationWindowOpen(todayStr = todayPST()) {
   return dayOfMonth(todayStr) <= 16;
 }
 
+// An admin can force nominations open (after the window locks) or closed for
+// the current month. The override only counts for the month it was set in, so
+// it expires on its own and next month goes back to the normal schedule.
+export function activeNominationOverride(override, todayStr = todayPST()) {
+  if (!override || !override.value) return '';
+  if (override.month !== currentMonthKey(todayStr)) return '';
+  return override.value === 'open' || override.value === 'closed' ? override.value : '';
+}
+
+export function isNominationOpen(todayStr = todayPST(), override = '') {
+  if (override === 'open') return true;
+  if (override === 'closed') return false;
+  return isNominationWindowOpen(todayStr);
+}
+
 // Reminder banner shows the 13th through the 16th — 3 days before the
 // deadline through the deadline itself.
 export function isNominationReminderWindow(todayStr = todayPST()) {
