@@ -296,6 +296,15 @@ function doPost(e) {
         Notes: data.notes || '',
         Status: data.status || 'Approved'
       });
+    } else if (data.type === 'ExpansionBonusPaid') {
+      // Stamps PaidAt / PaidBy on the approval row (matched by the original
+      // submission timestamp), or clears them when an admin undoes it.
+      var ebPaidSheet = getOrCreateSheet(ss, 'ExpansionBonusCompletions', ['Timestamp', 'OriginalTimestamp', 'ProcessedBy', 'Notes', 'Status']);
+      findAndUpdateRow(
+        ebPaidSheet,
+        { 'OriginalTimestamp': data.originalTimestamp || '' },
+        data.paid === false ? { 'PaidAt': '', 'PaidBy': '' } : { 'PaidAt': new Date(), 'PaidBy': data.paidBy || '' }
+      );
     } else if (data.type === 'CoachingCompliance') {
       var coachingSheet = getOrCreateSheet(ss, 'CoachingCompliance', ['Timestamp', 'TL', 'Agent', 'Type', 'FathomLink']);
       coachingSheet.appendRow([

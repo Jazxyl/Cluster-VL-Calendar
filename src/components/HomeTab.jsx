@@ -1,4 +1,4 @@
-import { todayPST, formatUSDate, isAprRelevant, daysFromAprDue, isNominationReminderWindow, currentMonthKey, formatBirthdayDate, isExpansionBonusMature } from '../lib/dates.js';
+import { todayPST, formatUSDate, isAprRelevant, daysFromAprDue, isNominationReminderWindow, currentMonthKey, formatBirthdayDate, isExpansionBonusMature, isCompletionDeclined } from '../lib/dates.js';
 
 function firstName(fullName) {
   return (fullName || '').trim().split(' ')[0];
@@ -52,6 +52,13 @@ export default function HomeTab({
       ).length
     : 0;
 
+  // The user's own approved expansion bonuses that haven't been confirmed as paid yet.
+  const awaitingPaymentCount = (expansionBonuses || []).filter((e) => {
+    if ((e.tl || '').toLowerCase().trim() !== (currentUserFullName || '').toLowerCase().trim()) return false;
+    const completion = (expansionBonusCompletions || []).find((c) => c.originalTimestamp === e.timestamp);
+    return completion && !isCompletionDeclined(completion) && !completion.paidAt;
+  }).length;
+
   return (
     <div>
       {relevantAprs.length > 0 && (
@@ -97,6 +104,21 @@ export default function HomeTab({
               {matureUnprocessedCount} expansion bonus{matureUnprocessedCount === 1 ? '' : 'es'} need processing
             </p>
             <p className="home-banner-sub">30+ days since start date — head to Expansion Bonus to review.</p>
+          </div>
+        </div>
+      )}
+
+      {awaitingPaymentCount > 0 && (
+        <div className="home-banner" onClick={onGoToExpansionBonus} style={{ cursor: 'pointer' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6EFF7B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2v20" />
+            <path d="M17 6.5c0-1.9-2.2-3.5-5-3.5s-5 1.4-5 3.5c0 2.3 2.2 3 5 3.5s5 1.2 5 3.5c0 2.1-2.2 3.5-5 3.5s-5-1.6-5-3.5" />
+          </svg>
+          <div>
+            <p className="home-banner-title">
+              {awaitingPaymentCount} approved expansion bonus{awaitingPaymentCount === 1 ? '' : 'es'} awaiting payment
+            </p>
+            <p className="home-banner-sub">Once it's paid out, open Expansion Bonus and mark it as paid.</p>
           </div>
         </div>
       )}

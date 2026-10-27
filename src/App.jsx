@@ -33,6 +33,7 @@ import {
   nominationSettingPayload,
   expansionBonusPayload,
   expansionBonusCompletionPayload,
+  expansionBonusPaidPayload,
   coachingCompliancePayload,
   addAgentPayload,
   updateAgentStatusPayload,
@@ -267,6 +268,8 @@ function AppContent({ session, onSignOut }) {
               processedBy: r.ProcessedBy || '',
               notes: r.Notes || '',
               status: (r.Status || '').trim(),
+              paidAt: (r.PaidAt || '').trim(),
+              paidBy: (r.PaidBy || '').trim(),
             }))
         );
       }),
@@ -452,6 +455,20 @@ function AppContent({ session, onSignOut }) {
     setExpansionBonusCompletions((prev) => [record, ...prev]);
     postToSheet(expansionBonusCompletionPayload(record)).then((res) => {
       if (!res.ok) toast('Marked locally, but the sheet write failed — check the webhook URL');
+    });
+  }
+
+  // Marks an approved expansion bonus as paid out (or clears it again).
+  function setExpansionBonusPaid({ originalTimestamp, paid }) {
+    setExpansionBonusCompletions((prev) =>
+      prev.map((c) =>
+        c.originalTimestamp === originalTimestamp
+          ? { ...c, paidAt: paid ? todayPST() : '', paidBy: paid ? currentUserName : '' }
+          : c
+      )
+    );
+    postToSheet(expansionBonusPaidPayload({ originalTimestamp, paidBy: currentUserName, paid })).then((res) => {
+      if (!res.ok) toast('Changed locally, but the sheet write failed — check the webhook URL');
     });
   }
 
@@ -702,6 +719,8 @@ function AppContent({ session, onSignOut }) {
             currentUserName={currentUserName}
             onSubmit={submitExpansionBonus}
             onProcess={processExpansionBonus}
+            onMarkPaid={({ originalTimestamp }) => setExpansionBonusPaid({ originalTimestamp, paid: true })}
+            onUndoPaid={({ originalTimestamp }) => setExpansionBonusPaid({ originalTimestamp, paid: false })}
             showSuccessModal={showSuccessModal}
           />
         )}

@@ -1,8 +1,21 @@
 import { useState } from 'react';
-import { todayPST, isExpansionBonusMature, formatUSDate } from '../lib/dates.js';
+import { todayPST, isExpansionBonusMature, formatUSDate, isCompletionDeclined } from '../lib/dates.js';
 
 function findCompletion(completions, timestamp) {
   return completions.find((c) => c.originalTimestamp === timestamp);
+}
+
+// PaidAt comes back from the sheet as "M/D/YYYY H:mm:ss", or as "YYYY-MM-DD"
+// when it was just marked in this session and the sheet hasn't been re-read.
+function paidDateLabel(paidAt) {
+  const s = (paidAt || '').trim();
+  if (!s) return '';
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return formatUSDate(s.slice(0, 10));
+  return s.split(' ')[0];
+}
+
+function sameName(a, b) {
+  return (a || '').toLowerCase().trim() === (b || '').toLowerCase().trim();
 }
 
 function ProcessRow({ entry, onProcess }) {
@@ -53,7 +66,15 @@ function ProcessRow({ entry, onProcess }) {
   );
 }
 
-export default function ExpansionBonusStatusTab({ entries, completions, isAdmin, currentUserName, onProcess }) {
+export default function ExpansionBonusStatusTab({
+  entries,
+  completions,
+  isAdmin,
+  currentUserName,
+  onProcess,
+  onMarkPaid,
+  onUndoPaid,
+}) {
   const todayStr = todayPST();
 
   const actionable = [];
@@ -70,6 +91,12 @@ export default function ExpansionBonusStatusTab({ entries, completions, isAdmin,
     }
   });
 
+  // Approved but not yet confirmed as paid out. Every approved entry starts
+  // here, including ones approved before payment tracking existed.
+  const awaitingPayment = settled.filter(
+    (e) => e.completion && !isCompletionDeclined(e.completion) && !e.completion.paidAt
+  );
+
   return (
     <div>
       {isAdmin && (
@@ -83,6 +110,27 @@ export default function ExpansionBonusStatusTab({ entries, completions, isAdmin,
         </div>
       )}
 
+      {isAdmin && (
+        <div className="card home-section" style={{ marginTop: 16 }}>
+          <p className="home-section-title">Awaiting payment ({awaitingPayment.length})</p>
+          {awaitingPayment.length === 0 ? (
+            <p className="empty-note">Everything approved has been paid out.</p>
+          ) : (
+            awaitingPayment.map((e) => (
+              <div className="hist-row" key={e.timestamp}>
+                <span className="who">
+                  {e.agent} · {e.client}
+                  <span style={{ display: 'block', fontSize: 11, color: 'var(--ink-soft)' }}>
+                    {e.tl} · approved by {e.completion.processedBy}
+                  </span>
+                </span>
+                <button onClick={() => onMarkPaid({ originalTimestamp: e.timestamp })}>Mark as paid</button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
       <div className="card home-section" style={{ marginTop: isAdmin ? 16 : 0 }}>
         <p className="home-section-title">All submissions</p>
         {entries.length === 0 ? (
@@ -92,19 +140,49 @@ export default function ExpansionBonusStatusTab({ entries, completions, isAdmin,
             .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
             .map((e, i) => {
               const completion = findCompletion(completions, e.timestamp);
-              const declined = completion && /^(denied|declined)$/i.test((completion.status || '').trim());
+              const declined = completion && isCompletionDeclined(completion);
+              const paid = completion && !declined && !!completion.paidAt;
+              const awaiting = completion && !declined && !completion.paidAt;
+              const canMarkPaid = awaiting && (isAdmin || sameName(e.tl, currentUserName));
+
+              let badgeClass = 'rejected';
+              let badgeText = 'Pending';
+              if (declined) badgeText = 'Declined';
+              else if (paid) {
+                badgeClass = 'approved';
+                badgeText = 'Paid';
+              } else if (awaiting) {
+                badgeClass = 'awaiting';
+                badgeText = 'Awaiting payment';
+              }
+
               return (
                 <div className="hist-row" key={i}>
-                  <span className={`badge ${completion && !declined ? 'approved' : 'rejected'}`}>
-                    {completion ? (declined ? 'Declined' : 'Approved') : 'Pending'}
-                  </span>
+                  <span className={`badge ${badgeClass}`}>{badgeText}</span>
                   <span className="who">
                     {e.agent} · {e.client}
                     <span style={{ display: 'block', fontSize: 11, color: 'var(--ink-soft)' }}>
                       {e.tl} · started {formatUSDate(e.startDate)}
                       {completion ? ` · ${completion.processedBy}: ${completion.notes}` : ''}
+                      {paid
+                        ? ` · paid${paidDateLabel(completion.paidAt) ? ` ${paidDateLabel(completion.paidAt)}` : ''}${
+                            completion.paidBy ? ` (confirmed by ${completion.paidBy})` : ''
+                          }`
+                        : ''}
                     </span>
                   </span>
+                  {canMarkPaid && (
+                    <button onClick={() => onMarkPaid({ originalTimestamp: e.timestamp })}>Mark as paid</button>
+                  )}
+                  {paid && isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => onUndoPaid({ originalTimestamp: e.timestamp })}
+                      style={{ background: 'none', border: 'none', color: 'var(--ink-soft)', fontSize: 11, textDecoration: 'underline', cursor: 'pointer', padding: 0 }}
+                    >
+                      Undo
+                    </button>
+                  )}
                 </div>
               );
             })

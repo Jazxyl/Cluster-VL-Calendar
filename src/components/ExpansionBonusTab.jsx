@@ -2,7 +2,7 @@ import { useState } from 'react';
 import ExpansionBonusSubmitTab from './ExpansionBonusSubmitTab.jsx';
 import ExpansionBonusStatusTab from './ExpansionBonusStatusTab.jsx';
 
-export default function ExpansionBonusTab({ leads, entries, completions, isAdmin, currentUserName, onSubmit, onProcess, showSuccessModal }) {
+export default function ExpansionBonusTab({ leads, entries, completions, isAdmin, currentUserName, onSubmit, onProcess, onMarkPaid, onUndoPaid, showSuccessModal }) {
   const [subTab, setSubTab] = useState('submit');
 
   return (
@@ -31,6 +31,8 @@ export default function ExpansionBonusTab({ leads, entries, completions, isAdmin
             isAdmin={isAdmin}
             currentUserName={currentUserName}
             onProcess={onProcess}
+            onMarkPaid={onMarkPaid}
+            onUndoPaid={onUndoPaid}
           />
         )}
       </div>

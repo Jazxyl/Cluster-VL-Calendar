@@ -310,6 +310,12 @@ export function daysSinceDate(dateStr, todayStr = todayPST()) {
   return calendarDaysBetween(dateStr, todayStr);
 }
 
+// A completion is declined when its Status column says Denied (or Declined).
+// A blank Status on older rows means it was approved.
+export function isCompletionDeclined(completion) {
+  return /^(denied|declined)$/i.test(((completion && completion.status) || '').trim());
+}
+
 export function isExpansionBonusMature(startDate, todayStr = todayPST(), maturityDays = 30) {
   const days = daysSinceDate(startDate, todayStr);
   return days !== null && days >= maturityDays;

@@ -137,6 +137,7 @@ button.ghost:hover { color: var(--navy); }
 .badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; padding: 3px 8px; border-radius: 20px; letter-spacing: .04em; }
 .badge.approved { background: #eef9e2; color: #1f4b0a; }
 .badge.rejected { background: var(--ink-black); color: #fff; }
+.badge.awaiting { background: #fff3d6; color: #6b4600; }
 
 .folder-tabs { display: flex; align-items: flex-end; }
 .folder-tab { border: none; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; }

@@ -113,6 +113,15 @@ export function expansionBonusCompletionPayload({ originalTimestamp, processedBy
   };
 }
 
+export function expansionBonusPaidPayload({ originalTimestamp, paidBy, paid }) {
+  return {
+    type: 'ExpansionBonusPaid',
+    originalTimestamp,
+    paidBy,
+    paid,
+  };
+}
+
 export function coachingCompliancePayload({ tl, agent, type, fathomLink }) {
   return {
     type: 'CoachingCompliance',
